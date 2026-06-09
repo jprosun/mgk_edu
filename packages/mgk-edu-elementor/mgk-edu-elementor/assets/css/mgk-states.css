@@ -1,0 +1,41 @@
+.mgk-state-panel {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 48px 24px;
+    border: 1px solid var(--mgk-border);
+    background: var(--mgk-white);
+    text-align: center;
+}
+
+.mgk-state-panel h1 {
+    margin: 0 0 10px;
+    font-size: 36px;
+}
+
+.mgk-form-message {
+    display: none;
+    margin-top: 8px;
+    color: var(--mgk-accent);
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.mgk-form-message.is-visible {
+    display: block;
+}
+
+.mgk-state-error {
+    padding: 18px;
+    border: 1px solid var(--mgk-accent);
+    background: var(--mgk-accent-soft);
+    color: var(--mgk-dark);
+}
+
+.mgk-state-error h2,
+.mgk-state-error p {
+    margin: 0;
+}
+
+.mgk-state-error h2 + p {
+    margin-top: 6px;
+}

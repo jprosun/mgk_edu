@@ -1,0 +1,248 @@
+/* ─── Modal overlay ───────────────────────────────────────── */
+
+.mgk-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: var(--mgk-z-modal);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 16px;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--mgk-transition), visibility var(--mgk-transition);
+}
+
+.mgk-modal-overlay.is-open {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ─── Modal dialog ────────────────────────────────────────── */
+
+.mgk-modal {
+    position: relative;
+    background: var(--mgk-white);
+    border-radius: var(--mgk-radius-md);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+    width: 100%;
+    max-width: 540px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(12px);
+    transition: transform var(--mgk-transition);
+}
+
+.mgk-modal-overlay.is-open .mgk-modal {
+    transform: translateY(0);
+}
+
+.mgk-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 24px 16px;
+    border-bottom: 1px solid var(--mgk-border);
+    flex-shrink: 0;
+}
+
+.mgk-modal-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.mgk-modal-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: none;
+    cursor: pointer;
+    color: var(--mgk-muted);
+    font-size: 20px;
+    line-height: 1;
+    border-radius: var(--mgk-radius-sm);
+    padding: 0;
+}
+
+.mgk-modal-close:hover {
+    background: var(--mgk-surface);
+    color: var(--mgk-ink);
+}
+
+.mgk-modal-body {
+    padding: 24px;
+    overflow-y: auto;
+    flex: 1;
+}
+
+.mgk-modal-footer {
+    padding: 16px 24px 20px;
+    border-top: 1px solid var(--mgk-border);
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+    flex-shrink: 0;
+}
+
+/* ─── Bottom sheet overlay ────────────────────────────────── */
+
+.mgk-sheet-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.5);
+    z-index: var(--mgk-z-modal);
+    display: flex;
+    align-items: flex-end;
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity var(--mgk-transition), visibility var(--mgk-transition);
+}
+
+.mgk-sheet-overlay.is-open {
+    opacity: 1;
+    visibility: visible;
+}
+
+/* ─── Bottom sheet panel ──────────────────────────────────── */
+
+.mgk-sheet {
+    width: 100%;
+    background: var(--mgk-white);
+    border-radius: var(--mgk-radius-lg) var(--mgk-radius-lg) 0 0;
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    transform: translateY(100%);
+    transition: transform 200ms ease;
+}
+
+.mgk-sheet-overlay.is-open .mgk-sheet {
+    transform: translateY(0);
+}
+
+.mgk-sheet-handle {
+    width: 36px;
+    height: 4px;
+    background: var(--mgk-border);
+    border-radius: 2px;
+    margin: 12px auto 8px;
+    flex-shrink: 0;
+}
+
+.mgk-sheet-header {
+    padding: 8px 20px 16px;
+    border-bottom: 1px solid var(--mgk-border);
+    flex-shrink: 0;
+}
+
+.mgk-sheet-title {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+}
+
+.mgk-sheet-body {
+    padding: 20px;
+    overflow-y: auto;
+    flex: 1;
+    -webkit-overflow-scrolling: touch;
+}
+
+/* On tablet+ the sheet becomes a centered modal */
+@media (min-width: 768px) {
+    .mgk-sheet-overlay {
+        align-items: center;
+        justify-content: center;
+        padding: 16px;
+    }
+
+    .mgk-sheet {
+        max-width: 480px;
+        border-radius: var(--mgk-radius-md);
+        transform: translateY(12px);
+    }
+
+    .mgk-sheet-overlay.is-open .mgk-sheet {
+        transform: translateY(0);
+    }
+
+    .mgk-sheet-handle {
+        display: none;
+    }
+}
+
+/* ─── Toast stack ─────────────────────────────────────────── */
+
+.mgk-toast-stack {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    z-index: var(--mgk-z-toast);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 320px;
+    max-width: calc(100vw - 40px);
+    pointer-events: none;
+}
+
+/* ─── Toast item ──────────────────────────────────────────── */
+
+.mgk-toast {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 12px 14px;
+    background: var(--mgk-dark);
+    color: var(--mgk-white);
+    border-radius: var(--mgk-radius-md);
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+    pointer-events: all;
+    font-size: 13px;
+    line-height: 1.4;
+    animation: mgk-toast-in 200ms ease forwards;
+}
+
+.mgk-toast.is-leaving {
+    animation: mgk-toast-out 200ms ease forwards;
+}
+
+.mgk-toast-success { border-left: 3px solid var(--mgk-success); }
+.mgk-toast-error   { border-left: 3px solid var(--mgk-accent); }
+.mgk-toast-info    { border-left: 3px solid var(--mgk-info); }
+.mgk-toast-warning { border-left: 3px solid var(--mgk-warning); }
+
+.mgk-toast-message {
+    flex: 1;
+}
+
+.mgk-toast-dismiss {
+    background: none;
+    border: none;
+    color: rgba(255, 255, 255, 0.55);
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    padding: 0;
+    flex-shrink: 0;
+}
+
+.mgk-toast-dismiss:hover {
+    color: var(--mgk-white);
+}
+
+@keyframes mgk-toast-in {
+    from { opacity: 0; transform: translateX(20px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes mgk-toast-out {
+    from { opacity: 1; transform: translateX(0); }
+    to   { opacity: 0; transform: translateX(20px); }
+}

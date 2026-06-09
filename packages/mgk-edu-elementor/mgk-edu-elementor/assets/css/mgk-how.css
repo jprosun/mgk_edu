@@ -1,0 +1,1945 @@
+.mgk-how-hero,
+.mgk-how-process,
+.mgk-how-video,
+.mgk-how-difference,
+.mgk-how-pricing,
+.mgk-how-verification,
+.mgk-how-comparison,
+.mgk-how-concerns {
+    border-bottom: 1px dashed var(--mgk-border);
+}
+
+.mgk-how-hero {
+    background: var(--mgk-bg);
+    text-align: center;
+}
+
+.mgk-how-hero .mgk-section-head {
+    margin-bottom: 0;
+}
+
+.mgk-how-hero .mgk-eyebrow {
+    color: var(--mgk-accent);
+    font-size: 11px;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+}
+
+.mgk-how-hero h1 {
+    margin: 8px 0 10px;
+    color: var(--mgk-dark);
+    font-size: clamp(42px, 6vw, 74px);
+    line-height: .95;
+    font-weight: 900;
+}
+
+.mgk-how-hero-rule {
+    width: min(520px, 82vw);
+    height: 18px;
+    display: block;
+    margin: 0 auto;
+    background:
+        linear-gradient(#e7e7e7, #e7e7e7) 50% 4px / 78% 5px no-repeat,
+        linear-gradient(#efefef, #efefef) 50% 14px / 58% 5px no-repeat;
+}
+
+.mgk-how-tabs {
+    max-width: 900px;
+    margin: 28px auto 0;
+}
+
+.mgk-tab-list {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+}
+
+.mgk-tab-list button {
+    min-height: 60px;
+    border: 1px solid var(--mgk-border);
+    background: var(--mgk-white);
+    color: var(--mgk-dark);
+    padding: 11px 12px;
+    cursor: pointer;
+    text-align: center;
+    border-radius: 0;
+    font: inherit;
+}
+
+.mgk-tab-list button.is-active {
+    background: var(--mgk-dark);
+    border-color: var(--mgk-dark);
+    color: var(--mgk-white);
+}
+
+.mgk-tab-list strong,
+.mgk-tab-list span {
+    display: block;
+}
+
+.mgk-tab-short {
+    display: none;
+}
+
+.mgk-step-cta-mobile,
+.mgk-how-mobile-sticky {
+    display: none;
+}
+
+.mgk-tab-list span {
+    margin-top: 5px;
+    color: var(--mgk-muted);
+    font-size: 10px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.mgk-tab-list button.is-active span {
+    color: #d7d7d7;
+}
+
+.mgk-tab-panel {
+    border: 1px solid var(--mgk-border);
+    border-top: 0;
+    background: var(--mgk-white);
+    padding: 14px 16px;
+    text-align: left;
+}
+
+.mgk-tab-panel h2 {
+    margin: 0;
+    font-size: 18px;
+}
+
+.mgk-tab-panel p {
+    margin: 6px 0 0;
+    color: var(--mgk-muted);
+    font-size: 13px;
+    line-height: 1.55;
+}
+
+.mgk-how-section-head,
+.mgk-how-process .mgk-section-head,
+.mgk-how-difference .mgk-section-head,
+.mgk-how-pricing .mgk-section-head,
+.mgk-how-verification .mgk-section-head,
+.mgk-how-comparison .mgk-section-head,
+.mgk-how-concerns .mgk-section-head {
+    margin-bottom: 28px;
+}
+
+.mgk-how-section-head h2,
+.mgk-how-process .mgk-section-head h2,
+.mgk-how-difference .mgk-section-head h2,
+.mgk-how-pricing .mgk-section-head h2,
+.mgk-how-verification .mgk-section-head h2,
+.mgk-how-comparison .mgk-section-head h2,
+.mgk-how-concerns .mgk-section-head h2 {
+    margin: 0;
+    color: var(--mgk-dark);
+    font-size: clamp(30px, 3.2vw, 46px);
+    line-height: 1.05;
+}
+
+.mgk-how-section-head p,
+.mgk-how-process .mgk-section-head p,
+.mgk-how-difference .mgk-section-head p,
+.mgk-how-pricing .mgk-section-head p,
+.mgk-how-verification .mgk-section-head p,
+.mgk-how-comparison .mgk-section-head p,
+.mgk-how-concerns .mgk-section-head p {
+    margin: 8px 0 0;
+    color: var(--mgk-muted);
+    font-size: 11px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.mgk-process-grid {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 22px;
+}
+
+.mgk-process-grid::before {
+    content: "";
+    position: absolute;
+    top: 35px;
+    left: 10%;
+    right: 10%;
+    height: 2px;
+    background: var(--mgk-accent);
+}
+
+.mgk-process-step {
+    position: relative;
+    z-index: 1;
+    text-align: center;
+}
+
+.mgk-process-num {
+    width: 70px;
+    height: 70px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--mgk-accent);
+    color: var(--mgk-white);
+    font-size: 28px;
+    font-weight: 900;
+}
+
+.mgk-process-step h3 {
+    margin: 16px 0 4px;
+    font-size: 18px;
+}
+
+.mgk-process-step strong {
+    color: var(--mgk-accent);
+    font-size: 11px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.mgk-process-step ul {
+    margin: 12px 0 0;
+    padding: 0;
+    list-style: none;
+    text-align: left;
+    color: var(--mgk-muted);
+    font-size: 12px;
+}
+
+.mgk-process-step li {
+    padding: 6px 0;
+    border-bottom: 1px dotted var(--mgk-border);
+}
+
+.mgk-process-step li::before {
+    content: "•";
+    color: var(--mgk-accent);
+    font-weight: 900;
+    margin-right: 6px;
+}
+
+.mgk-check-list li::before {
+    content: "✓";
+    color: var(--mgk-accent);
+    font-weight: 900;
+    margin-right: 6px;
+}
+
+.mgk-process-step p {
+    color: var(--mgk-muted);
+    font-size: 10px;
+    letter-spacing: .05em;
+    line-height: 1.35;
+    text-transform: uppercase;
+}
+
+.mgk-how-center {
+    margin-top: 28px;
+    text-align: center;
+}
+
+.mgk-how-split {
+    display: grid;
+    grid-template-columns: minmax(0, .95fr) minmax(420px, 1.05fr);
+    gap: 34px;
+    align-items: center;
+}
+
+.mgk-how-split h2 {
+    margin: 0;
+    color: var(--mgk-dark);
+    font-size: clamp(32px, 3.6vw, 52px);
+    line-height: 1.04;
+}
+
+.mgk-how-split p {
+    color: var(--mgk-muted);
+    line-height: 1.6;
+}
+
+.mgk-check-list {
+    margin: 16px 0 0;
+    padding: 0;
+    list-style: none;
+    color: var(--mgk-muted);
+}
+
+.mgk-check-list li {
+    padding: 6px 0;
+}
+
+.mgk-button-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.mgk-button-row .mgk-btn {
+    min-width: 160px;
+    border-radius: 0;
+}
+
+.mgk-how-video-box {
+    width: 100%;
+    min-height: 330px;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--mgk-border);
+    font-weight: 900;
+    cursor: pointer;
+    appearance: none;
+    padding: 0;
+    font: inherit;
+}
+
+.mgk-how-video-box span {
+    background: var(--mgk-accent);
+    color: var(--mgk-white);
+    padding: 16px 28px;
+}
+
+.mgk-how-video-box small {
+    position: absolute;
+    right: 12px;
+    bottom: 12px;
+    background: rgba(0, 0, 0, .72);
+    color: var(--mgk-white);
+    padding: 6px 8px;
+}
+
+.mgk-difference-card span {
+    display: inline-flex;
+    min-width: 44px;
+    height: 44px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--mgk-border);
+    color: var(--mgk-accent);
+    font-weight: 900;
+}
+
+.mgk-difference-card h3 {
+    margin: 14px 0 8px;
+}
+
+.mgk-difference-card p {
+    color: var(--mgk-muted);
+    line-height: 1.55;
+}
+
+.mgk-difference-card strong {
+    display: block;
+    margin-top: auto;
+    border-left: 3px solid var(--mgk-accent);
+    background: var(--mgk-accent-soft);
+    color: var(--mgk-accent);
+    padding: 9px 10px;
+    font-size: 13px;
+}
+
+.mgk-difference-card {
+    min-height: 230px;
+    display: flex;
+    flex-direction: column;
+    border-radius: 0;
+}
+
+.mgk-how-guarantee .mgk-section-head h2,
+.mgk-how-guarantee .mgk-section-head p {
+    color: var(--mgk-white);
+}
+
+.mgk-guarantee-card {
+    min-height: 168px;
+    background: rgba(255, 255, 255, .12);
+    border: 1px solid rgba(255, 255, 255, .25);
+    padding: 18px 16px;
+    text-align: center;
+    border-radius: 0;
+}
+
+.mgk-guarantee-card span {
+    display: block;
+    margin-bottom: 10px;
+    color: var(--mgk-white);
+    font-size: 28px;
+    font-weight: 900;
+}
+
+.mgk-guarantee-card h3,
+.mgk-guarantee-card p {
+    color: var(--mgk-white);
+}
+
+.mgk-guarantee-card p {
+    opacity: .88;
+}
+
+.mgk-price-panel,
+.mgk-included-card {
+    border: 1px solid var(--mgk-border);
+    background: var(--mgk-white);
+    border-radius: 0;
+    padding: 20px;
+}
+
+.mgk-price-panel h3,
+.mgk-included-card h3 {
+    margin: 0 0 12px;
+    color: var(--mgk-dark);
+    font-size: 20px;
+}
+
+.mgk-price-lines {
+    border-top: 1px solid var(--mgk-border);
+}
+
+.mgk-price-lines div {
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--mgk-border);
+}
+
+.mgk-price-lines div:last-child {
+    margin: 10px -10px -4px;
+    padding: 14px 10px;
+    background: var(--mgk-accent-soft);
+    border: 1px solid var(--mgk-accent);
+}
+
+.mgk-price-lines strong {
+    color: var(--mgk-accent);
+    text-align: right;
+}
+
+.mgk-included-card {
+    background: var(--mgk-bg);
+}
+
+.mgk-verification-card {
+    min-height: 220px;
+    border-radius: 0;
+}
+
+.mgk-verification-grid .mgk-card h3 {
+    margin-top: 0;
+}
+
+.mgk-verification-grid ul {
+    margin: 12px 0 0;
+    padding-left: 18px;
+    color: var(--mgk-muted);
+    line-height: 1.7;
+}
+
+.mgk-acceptance {
+    margin-top: 18px;
+    padding: 18px;
+    background: var(--mgk-white);
+    border: 1px solid var(--mgk-border);
+    text-align: center;
+}
+
+.mgk-acceptance p {
+    color: var(--mgk-muted);
+    font-size: 11px;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.mgk-acceptance strong {
+    display: block;
+    margin-top: 0;
+    color: var(--mgk-accent);
+    font-size: 28px;
+}
+
+.mgk-compare-table {
+    border: 1px solid var(--mgk-border);
+    overflow: hidden;
+}
+
+.mgk-compare-row {
+    display: grid;
+    grid-template-columns: 2fr 1.5fr 1.5fr;
+    border-bottom: 1px solid var(--mgk-border);
+}
+
+.mgk-compare-row:last-child {
+    border-bottom: 0;
+}
+
+.mgk-compare-row > div {
+    padding: 13px 16px;
+    border-right: 1px solid var(--mgk-border);
+}
+
+.mgk-compare-row > div:last-child {
+    border-right: 0;
+}
+
+.mgk-compare-row > div:nth-child(2) {
+    color: var(--mgk-accent);
+    font-weight: 900;
+    text-align: center;
+}
+
+.mgk-compare-row > div:nth-child(3) {
+    color: var(--mgk-muted);
+    text-align: center;
+}
+
+.mgk-compare-head {
+    background: var(--mgk-dark);
+    color: var(--mgk-white);
+    font-weight: 900;
+}
+
+.mgk-compare-head > div:nth-child(2),
+.mgk-compare-head > div:nth-child(3) {
+    color: var(--mgk-white);
+}
+
+.mgk-concern-card h3 {
+    margin-top: 0;
+    font-size: 18px;
+}
+
+.mgk-concern-card {
+    min-height: 180px;
+    border-radius: 0;
+}
+
+.mgk-concern-card span {
+    display: block;
+    height: 7px;
+    margin-top: 12px;
+    background: #e9e9e9;
+}
+
+.mgk-concern-card span + span {
+    width: 72%;
+    margin-top: 7px;
+}
+
+.mgk-concern-card p {
+    margin-top: 18px;
+    color: var(--mgk-accent);
+    font-weight: 900;
+    font-size: 12px;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.mgk-how-faq-groups {
+    max-width: 920px;
+    margin: 0 auto;
+}
+
+.mgk-how-faq-group + .mgk-how-faq-group {
+    margin-top: 22px;
+}
+
+.mgk-how-faq-group h3 {
+    border-bottom: 2px solid var(--mgk-accent);
+    padding-bottom: 8px;
+}
+
+.mgk-cta-band {
+    text-align: center;
+}
+
+.mgk-cta-band h2 {
+    margin: 0;
+    color: var(--mgk-white);
+    font-size: 36px;
+}
+
+.mgk-cta-band p {
+    color: var(--mgk-white);
+}
+
+.mgk-cta-actions {
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-top: 18px;
+}
+
+.mgk-cta-actions .mgk-btn-accent {
+    border-color: var(--mgk-dark);
+    background: var(--mgk-dark);
+    color: var(--mgk-white);
+}
+
+.mgk-cta-actions .mgk-btn-light {
+    color: var(--mgk-dark);
+}
+
+.mgk-cta-note {
+    margin-top: 14px;
+    opacity: .86;
+    font-size: 13px;
+}
+
+@media (max-width: 980px) {
+    .mgk-process-grid,
+    .mgk-how-split {
+        grid-template-columns: 1fr;
+    }
+
+    .mgk-process-grid::before {
+        display: none;
+    }
+
+    .mgk-difference-grid,
+    .mgk-verification-grid,
+    .mgk-how-guarantee .mgk-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+}
+
+@media (max-width: 640px) {
+    .mgk-tab-list,
+    .mgk-difference-grid,
+    .mgk-verification-grid,
+    .mgk-how-guarantee .mgk-grid,
+    .mgk-how-concerns .mgk-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mgk-compare-table {
+        overflow-x: auto;
+    }
+
+    .mgk-compare-row {
+        min-width: 620px;
+    }
+
+    .mgk-price-lines div {
+        display: block;
+    }
+
+    .mgk-price-lines strong {
+        display: block;
+        margin-top: 4px;
+        text-align: left;
+    }
+}
+
+@media (min-width: 641px) and (max-width: 1023px) {
+    .mgk-how-page .mgk-shell {
+        width: min(100% - 24px, var(--mgk-container));
+    }
+
+    /* Topbar + header on tablet use the shared global rules — no per-page
+       override (S01-S06 share one topbar and header). Only page content here. */
+
+    .mgk-how-page .mgk-section {
+        padding: 28px 0;
+    }
+
+    .mgk-how-hero h1 {
+        margin-top: 6px;
+        font-size: 34px;
+        line-height: 1;
+    }
+
+    .mgk-how-hero .mgk-eyebrow {
+        font-size: 9px;
+    }
+
+    .mgk-how-hero-rule {
+        width: min(360px, 78vw);
+        height: 16px;
+        background:
+            linear-gradient(#e7e7e7, #e7e7e7) 50% 3px / 82% 5px no-repeat,
+            linear-gradient(#efefef, #efefef) 50% 13px / 62% 5px no-repeat;
+    }
+
+    .mgk-how-tabs {
+        max-width: none;
+        margin-top: 18px;
+    }
+
+    .mgk-tab-list {
+        gap: 6px;
+    }
+
+    .mgk-tab-list button {
+        min-height: 42px;
+        padding: 8px 10px;
+    }
+
+    .mgk-tab-full,
+    .mgk-tab-list button > span,
+    .mgk-tab-panel {
+        display: none;
+    }
+
+    .mgk-tab-short {
+        display: block;
+        font-size: 12px;
+    }
+
+    .mgk-how-section-head,
+    .mgk-how-process .mgk-section-head,
+    .mgk-how-difference .mgk-section-head,
+    .mgk-how-pricing .mgk-section-head,
+    .mgk-how-verification .mgk-section-head,
+    .mgk-how-comparison .mgk-section-head,
+    .mgk-how-concerns .mgk-section-head,
+    .mgk-how-faq .mgk-section-head {
+        max-width: none;
+        margin-bottom: 16px;
+        text-align: left;
+    }
+
+    .mgk-how-process .mgk-section-head {
+        text-align: center;
+    }
+
+    .mgk-how-section-head h2,
+    .mgk-how-process .mgk-section-head h2,
+    .mgk-how-difference .mgk-section-head h2,
+    .mgk-how-pricing .mgk-section-head h2,
+    .mgk-how-verification .mgk-section-head h2,
+    .mgk-how-comparison .mgk-section-head h2,
+    .mgk-how-concerns .mgk-section-head h2,
+    .mgk-how-faq .mgk-section-head h2 {
+        font-size: 20px;
+        line-height: 1.15;
+    }
+
+    .mgk-how-process .mgk-section-head h2 {
+        font-size: 22px;
+    }
+
+    .mgk-how-process .mgk-section-head h2 {
+        font-size: 0;
+    }
+
+    .mgk-how-process .mgk-section-head h2::before {
+        content: "4 steps from need to tutor";
+        font-size: 22px;
+    }
+
+    .mgk-how-section-head p,
+    .mgk-how-process .mgk-section-head p,
+    .mgk-how-difference .mgk-section-head p,
+    .mgk-how-pricing .mgk-section-head p,
+    .mgk-how-verification .mgk-section-head p,
+    .mgk-how-comparison .mgk-section-head p,
+    .mgk-how-concerns .mgk-section-head p,
+    .mgk-how-faq .mgk-section-head p {
+        display: none;
+    }
+
+    .mgk-process-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .mgk-process-grid::before {
+        display: none;
+    }
+
+    .mgk-process-step {
+        min-height: 168px;
+        padding: 14px 14px 12px 68px;
+        border: 1px solid var(--mgk-border);
+        background: var(--mgk-white);
+        text-align: left;
+    }
+
+    .mgk-process-num {
+        position: absolute;
+        top: 14px;
+        left: 14px;
+        width: 46px;
+        height: 46px;
+        font-size: 20px;
+    }
+
+    .mgk-process-step h3 {
+        margin: 2px 0 4px;
+        font-size: 16px;
+    }
+
+    .mgk-process-step:nth-child(2) h3 {
+        font-size: 0;
+    }
+
+    .mgk-process-step:nth-child(2) h3::before {
+        content: "Matched in 6h";
+        font-size: 16px;
+    }
+
+    .mgk-process-step:nth-child(4) h3 {
+        font-size: 0;
+    }
+
+    .mgk-process-step:nth-child(4) h3::before {
+        content: "Continue package";
+        font-size: 16px;
+    }
+
+    .mgk-process-step strong {
+        font-size: 10px;
+    }
+
+    .mgk-process-step ul {
+        margin-top: 8px;
+        font-size: 11px;
+    }
+
+    .mgk-process-step li:nth-child(n+4),
+    .mgk-process-step p {
+        display: none;
+    }
+
+    .mgk-how-center {
+        margin-top: 14px;
+    }
+
+    .mgk-how-process .mgk-btn-accent {
+        width: 100%;
+        min-height: 44px;
+    }
+
+    .mgk-how-split {
+        grid-template-columns: 1fr;
+        gap: 14px;
+    }
+
+    .mgk-how-video .mgk-eyebrow {
+        font-size: 10px;
+    }
+
+    .mgk-how-video h2 {
+        font-size: 0;
+    }
+
+    .mgk-how-video h2::before {
+        content: "Watch how it works (2 min)";
+        font-size: 22px;
+    }
+
+    .mgk-how-video p,
+    .mgk-how-video .mgk-check-list,
+    .mgk-how-video .mgk-button-row {
+        display: none;
+    }
+
+    .mgk-how-video-box {
+        min-height: 185px;
+    }
+
+    .mgk-how-video-box span {
+        padding: 12px 28px;
+        font-size: 13px;
+    }
+
+    .mgk-how-video-box small {
+        display: none;
+    }
+
+    .mgk-difference-grid,
+    .mgk-how-guarantee .mgk-grid,
+    .mgk-verification-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+    }
+
+    .mgk-how-difference .mgk-section-head h2 {
+        font-size: 0;
+        text-align: center;
+    }
+
+    .mgk-how-difference .mgk-section-head h2::before {
+        content: "What makes us different";
+        font-size: 22px;
+    }
+
+    .mgk-difference-card {
+        min-height: 104px;
+        padding: 12px;
+    }
+
+    .mgk-difference-card span {
+        min-width: 28px;
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    .mgk-difference-card h3 {
+        margin: 8px 0 4px;
+        font-size: 15px;
+    }
+
+    .mgk-difference-card:nth-child(1) h3,
+    .mgk-difference-card:nth-child(2) h3,
+    .mgk-difference-card:nth-child(3) h3,
+    .mgk-difference-card:nth-child(4) h3,
+    .mgk-difference-card:nth-child(6) h3 {
+        font-size: 0;
+    }
+
+    .mgk-difference-card:nth-child(1) h3::before { content: "6h matching"; font-size: 15px; }
+    .mgk-difference-card:nth-child(2) h3::before { content: "Verified"; font-size: 15px; }
+    .mgk-difference-card:nth-child(3) h3::before { content: "Track progress"; font-size: 15px; }
+    .mgk-difference-card:nth-child(4) h3::before { content: "Transparent"; font-size: 15px; }
+    .mgk-difference-card:nth-child(6) h3::before { content: "In-app msg"; font-size: 15px; }
+
+    .mgk-difference-card p {
+        display: none;
+    }
+
+    .mgk-difference-card strong {
+        margin-top: 8px;
+        padding: 7px 8px;
+        font-size: 10px;
+    }
+
+    .mgk-how-guarantee {
+        padding: 28px 0;
+    }
+
+    .mgk-how-guarantee .mgk-section-head {
+        text-align: center;
+    }
+
+    .mgk-how-guarantee .mgk-section-head h2 {
+        font-size: 0;
+    }
+
+    .mgk-how-guarantee .mgk-section-head h2::before {
+        content: "Quality Guarantee";
+        font-size: 22px;
+    }
+
+    .mgk-guarantee-card {
+        min-height: 92px;
+        padding: 14px;
+    }
+
+    .mgk-guarantee-card span {
+        margin-bottom: 6px;
+        font-size: 22px;
+    }
+
+    .mgk-guarantee-card h3 {
+        margin: 0;
+        font-size: 14px;
+    }
+
+    .mgk-guarantee-card:nth-child(1) h3,
+    .mgk-guarantee-card:nth-child(3) h3 {
+        font-size: 0;
+    }
+
+    .mgk-guarantee-card:nth-child(1) h3::before { content: "4.8 min"; font-size: 14px; }
+    .mgk-guarantee-card:nth-child(3) h3::before { content: "Background"; font-size: 14px; }
+
+    .mgk-guarantee-card p {
+        display: none;
+    }
+
+    .mgk-how-pricing .mgk-section-head h2 {
+        font-size: 0;
+    }
+
+    .mgk-how-pricing .mgk-section-head h2::before {
+        content: "Transparent pricing";
+        font-size: 22px;
+    }
+
+    .mgk-price-panel,
+    .mgk-included-card {
+        padding: 14px;
+    }
+
+    .mgk-price-panel h3,
+    .mgk-how-pricing .mgk-how-center {
+        display: none;
+    }
+
+    .mgk-price-lines div {
+        padding: 11px 0;
+    }
+
+    .mgk-price-lines div:nth-child(n+4) {
+        display: none;
+    }
+
+    .mgk-price-lines div:last-child,
+    .mgk-price-lines div:nth-child(3) {
+        display: flex;
+        margin: 0 -8px -1px;
+        padding: 12px 8px;
+        border: 1px solid var(--mgk-accent);
+        background: var(--mgk-accent-soft);
+    }
+
+    .mgk-price-lines div:nth-child(1) span,
+    .mgk-price-lines div:nth-child(2) span,
+    .mgk-price-lines div:nth-child(3) span,
+    .mgk-price-lines div:nth-child(1) strong,
+    .mgk-price-lines div:nth-child(2) strong,
+    .mgk-price-lines div:nth-child(3) strong {
+        font-size: 0;
+    }
+
+    .mgk-price-lines div:nth-child(1) span::before { content: "HOURLY RATE"; font-size: 11px; }
+    .mgk-price-lines div:nth-child(2) span::before { content: "TRIAL"; font-size: 11px; }
+    .mgk-price-lines div:nth-child(3) span::before { content: "AGENCY FEE"; font-size: 11px; }
+    .mgk-price-lines div:nth-child(1) strong::before { content: "$30-$150"; font-size: 11px; }
+    .mgk-price-lines div:nth-child(2) strong::before { content: "40% OFF"; font-size: 11px; }
+    .mgk-price-lines div:nth-child(3) strong::before { content: "$0 FREE"; font-size: 11px; }
+
+    .mgk-included-card h3 {
+        font-size: 0;
+    }
+
+    .mgk-included-card h3::before {
+        content: "Included free";
+        font-size: 16px;
+    }
+
+    .mgk-included-card .mgk-check-list {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 5px 16px;
+        margin-top: 8px;
+        font-size: 11px;
+    }
+
+    .mgk-included-card .mgk-check-list li {
+        padding: 2px 0;
+    }
+
+    .mgk-included-card .mgk-check-list li:nth-child(1),
+    .mgk-included-card .mgk-check-list li:nth-child(2),
+    .mgk-included-card .mgk-check-list li:nth-child(3),
+    .mgk-included-card .mgk-check-list li:nth-child(4),
+    .mgk-included-card .mgk-check-list li:nth-child(5),
+    .mgk-included-card .mgk-check-list li:nth-child(6),
+    .mgk-included-card .mgk-check-list li:nth-child(7) {
+        font-size: 0;
+    }
+
+    .mgk-included-card .mgk-check-list li:nth-child(1)::after { content: "Matching"; font-size: 11px; }
+    .mgk-included-card .mgk-check-list li:nth-child(2)::after { content: "Lesson log"; font-size: 11px; }
+    .mgk-included-card .mgk-check-list li:nth-child(3)::after { content: "Weekly digest"; font-size: 11px; }
+    .mgk-included-card .mgk-check-list li:nth-child(4)::after { content: "Messaging"; font-size: 11px; }
+    .mgk-included-card .mgk-check-list li:nth-child(5)::after { content: "Receipt"; font-size: 11px; }
+    .mgk-included-card .mgk-check-list li:nth-child(6)::after { content: "Support"; font-size: 11px; }
+    .mgk-included-card .mgk-check-list li:nth-child(7)::after { content: "Re-match"; font-size: 11px; }
+    .mgk-included-card .mgk-check-list li:nth-child(n+8) { display: none; }
+
+    .mgk-how-verification .mgk-section-head h2 {
+        font-size: 0;
+    }
+
+    .mgk-how-verification .mgk-section-head h2::before {
+        content: "4-step verification";
+        font-size: 22px;
+    }
+
+    .mgk-verification-card {
+        min-height: 92px;
+        padding: 12px;
+    }
+
+    .mgk-verification-card h3 {
+        font-size: 0;
+    }
+
+    .mgk-verification-card:nth-child(1) h3::before { content: "Identity"; font-size: 15px; }
+    .mgk-verification-card:nth-child(2) h3::before { content: "Credentials"; font-size: 15px; }
+    .mgk-verification-card:nth-child(3) h3::before { content: "Background"; font-size: 15px; }
+    .mgk-verification-card:nth-child(4) h3::before { content: "Demo + Interview"; font-size: 15px; }
+
+    .mgk-verification-grid ul {
+        display: none;
+    }
+
+    .mgk-acceptance {
+        margin-top: 10px;
+        padding: 12px;
+    }
+
+    .mgk-acceptance strong {
+        font-size: 0;
+    }
+
+    .mgk-acceptance strong::before {
+        content: "~35% pass";
+        font-size: 20px;
+    }
+
+    .mgk-acceptance p {
+        margin: 4px 0 0;
+        font-size: 10px;
+    }
+
+    .mgk-acceptance p {
+        font-size: 0;
+    }
+
+    .mgk-acceptance p::before {
+        content: "WE SAY NO MORE THAN YES";
+        font-size: 10px;
+    }
+
+    .mgk-how-comparison .mgk-section-head h2 {
+        font-size: 0;
+    }
+
+    .mgk-how-comparison .mgk-section-head h2::before {
+        content: "Margick vs Traditional";
+        font-size: 22px;
+    }
+
+    .mgk-compare-row {
+        grid-template-columns: 1.25fr 1fr 1fr;
+        font-size: 11px;
+    }
+
+    .mgk-compare-row > div {
+        padding: 10px 8px;
+    }
+
+    .mgk-compare-row:nth-child(n+7) {
+        display: none;
+    }
+
+    .mgk-compare-row:nth-child(2) > div:nth-child(2),
+    .mgk-compare-row:nth-child(3) > div:nth-child(2),
+    .mgk-compare-row:nth-child(4) > div:nth-child(2),
+    .mgk-compare-row:nth-child(5) > div:nth-child(2),
+    .mgk-compare-row:nth-child(6) > div:nth-child(2) {
+        font-size: 0;
+    }
+
+    .mgk-compare-row:nth-child(2) > div:nth-child(2)::before { content: "6h ✓"; font-size: 11px; }
+    .mgk-compare-row:nth-child(3) > div:nth-child(1) { font-size: 0; }
+    .mgk-compare-row:nth-child(3) > div:nth-child(1)::before { content: "Demo video"; font-size: 11px; }
+    .mgk-compare-row:nth-child(3) > div:nth-child(2)::before { content: "Yes ✓"; font-size: 11px; }
+    .mgk-compare-row:nth-child(4) > div:nth-child(2)::before { content: "40% ✓"; font-size: 11px; }
+    .mgk-compare-row:nth-child(5) > div:nth-child(2)::before { content: "Built-in ✓"; font-size: 11px; }
+    .mgk-compare-row:nth-child(6) > div:nth-child(1) { font-size: 0; }
+    .mgk-compare-row:nth-child(6) > div:nth-child(1)::before { content: "Re-match free"; font-size: 11px; }
+    .mgk-compare-row:nth-child(6) > div:nth-child(2)::before { content: "Yes ✓"; font-size: 11px; }
+    .mgk-compare-row:nth-child(6) > div:nth-child(3) { font-size: 0; }
+    .mgk-compare-row:nth-child(6) > div:nth-child(3)::before { content: "Pay again"; font-size: 11px; }
+
+    .mgk-how-concerns .mgk-section-head h2 {
+        font-size: 0;
+    }
+
+    .mgk-how-concerns .mgk-section-head h2::before {
+        content: "Common concerns";
+        font-size: 22px;
+    }
+
+    .mgk-how-concerns .mgk-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .mgk-concern-card {
+        min-height: 74px;
+        padding: 12px;
+    }
+
+    .mgk-concern-card:nth-child(n+4) {
+        display: none;
+    }
+
+    .mgk-concern-card h3 {
+        margin: 0;
+        font-size: 0;
+    }
+
+    .mgk-concern-card:nth-child(1) h3::before { content: "\"Child doesn't click với tutor?\""; font-size: 14px; }
+    .mgk-concern-card:nth-child(2) h3::before { content: "\"Tutor real và qualified?\""; font-size: 14px; }
+    .mgk-concern-card:nth-child(3) h3::before { content: "\"Tutor cancel last minute?\""; font-size: 14px; }
+
+    .mgk-concern-card span {
+        display: none;
+    }
+
+    .mgk-concern-card p {
+        margin: 8px 0 0;
+        font-size: 0;
+    }
+
+    .mgk-concern-card:nth-child(1) p::before { content: "FREE RE-MATCH"; font-size: 11px; }
+    .mgk-concern-card:nth-child(2) p::before { content: "4-STEP VERIFICATION"; font-size: 11px; }
+    .mgk-concern-card:nth-child(3) p::before { content: "REFUND + FREE CREDIT"; font-size: 11px; }
+
+    .mgk-how-faq .mgk-section-head {
+        text-align: center;
+    }
+
+    .mgk-how-faq .mgk-section-head h2 {
+        font-size: 0;
+    }
+
+    .mgk-how-faq .mgk-section-head h2::before {
+        content: "FAQ";
+        font-size: 22px;
+    }
+
+    .mgk-how-faq-groups {
+        max-width: none;
+    }
+
+    .mgk-how-faq-group + .mgk-how-faq-group {
+        margin-top: 16px;
+    }
+
+    .mgk-how-faq-group h3 {
+        margin: 0 0 8px;
+        padding-bottom: 6px;
+        font-size: 14px;
+    }
+
+    .mgk-how-faq-group:nth-child(n+4) {
+        display: none;
+    }
+
+    .mgk-how-faq-group .mgk-faq-item:nth-child(n+3) {
+        display: none;
+    }
+
+    .mgk-how-faq .mgk-faq-item button {
+        min-height: 34px;
+        padding: 8px 10px;
+        border-radius: 0;
+        font-size: 0;
+        text-transform: uppercase;
+    }
+
+    .mgk-how-faq .mgk-how-faq-group:nth-child(1) .mgk-faq-item:nth-child(1) button span:first-child::before { content: "HOW LONG MATCHING?"; font-size: 10px; }
+    .mgk-how-faq .mgk-how-faq-group:nth-child(1) .mgk-faq-item:nth-child(2) button span:first-child::before { content: "DON'T LIKE MATCHED?"; font-size: 10px; }
+    .mgk-how-faq .mgk-how-faq-group:nth-child(2) .mgk-faq-item:nth-child(1) button span:first-child::before { content: "COST TYPICAL?"; font-size: 10px; }
+    .mgk-how-faq .mgk-how-faq-group:nth-child(2) .mgk-faq-item:nth-child(2) button span:first-child::before { content: "COMMISSION?"; font-size: 10px; }
+    .mgk-how-faq .mgk-how-faq-group:nth-child(3) .mgk-faq-item:nth-child(1) button span:first-child::before { content: "DURATION?"; font-size: 10px; }
+    .mgk-how-faq .mgk-how-faq-group:nth-child(3) .mgk-faq-item:nth-child(2) button span:first-child::before { content: "CANCEL/RESCHEDULE?"; font-size: 10px; }
+}
+
+@media (max-width: 640px) {
+    .mgk-how-page {
+        padding-bottom: 46px;
+    }
+
+    .mgk-how-page .mgk-shell {
+        width: min(100% - 24px, var(--mgk-container));
+    }
+
+    /* Topbar + header on mobile use the shared global rules — no per-page
+       override (S01-S06 share one topbar and header). Only page content here. */
+
+    .mgk-how-page .mgk-section {
+        padding: 24px 0;
+    }
+
+    .mgk-how-hero h1 {
+        margin: 6px 0 6px;
+        font-size: 26px;
+        line-height: 1;
+    }
+
+    .mgk-how-hero .mgk-eyebrow {
+        font-size: 0;
+    }
+
+    .mgk-how-hero .mgk-eyebrow::before {
+        content: "📚 SIMPLE · GUARANTEED";
+        color: var(--mgk-accent);
+        font-size: 9px;
+        letter-spacing: .06em;
+    }
+
+    .mgk-how-hero-rule {
+        width: min(260px, 76vw);
+        height: 10px;
+        background: linear-gradient(#e8e8e8, #e8e8e8) 50% 3px / 78% 5px no-repeat;
+    }
+
+    .mgk-how-tabs {
+        margin-top: 14px;
+    }
+
+    .mgk-tab-list {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 4px;
+    }
+
+    .mgk-tab-list button {
+        min-height: 34px;
+        padding: 7px 6px;
+    }
+
+    .mgk-tab-full,
+    .mgk-tab-list button > span,
+    .mgk-tab-panel {
+        display: none;
+    }
+
+    .mgk-tab-short {
+        display: block;
+        font-size: 10px;
+        line-height: 1;
+    }
+
+    .mgk-how-section-head,
+    .mgk-how-process .mgk-section-head,
+    .mgk-how-difference .mgk-section-head,
+    .mgk-how-pricing .mgk-section-head,
+    .mgk-how-verification .mgk-section-head,
+    .mgk-how-comparison .mgk-section-head,
+    .mgk-how-concerns .mgk-section-head,
+    .mgk-how-faq .mgk-section-head {
+        max-width: none;
+        margin-bottom: 12px;
+        text-align: left;
+    }
+
+    .mgk-how-process .mgk-section-head,
+    .mgk-how-difference .mgk-section-head,
+    .mgk-how-guarantee .mgk-section-head,
+    .mgk-how-faq .mgk-section-head {
+        text-align: center;
+    }
+
+    .mgk-how-section-head h2,
+    .mgk-how-process .mgk-section-head h2,
+    .mgk-how-difference .mgk-section-head h2,
+    .mgk-how-pricing .mgk-section-head h2,
+    .mgk-how-verification .mgk-section-head h2,
+    .mgk-how-comparison .mgk-section-head h2,
+    .mgk-how-concerns .mgk-section-head h2,
+    .mgk-how-faq .mgk-section-head h2 {
+        font-size: 18px;
+        line-height: 1.1;
+    }
+
+    .mgk-how-section-head p,
+    .mgk-how-process .mgk-section-head p,
+    .mgk-how-difference .mgk-section-head p,
+    .mgk-how-pricing .mgk-section-head p,
+    .mgk-how-verification .mgk-section-head p,
+    .mgk-how-comparison .mgk-section-head p,
+    .mgk-how-concerns .mgk-section-head p,
+    .mgk-how-faq .mgk-section-head p {
+        display: none;
+    }
+
+    .mgk-how-process .mgk-section-head h2 {
+        font-size: 0;
+    }
+
+    .mgk-how-process .mgk-section-head h2::before {
+        content: "4 steps";
+        font-size: 20px;
+    }
+
+    .mgk-process-grid {
+        grid-template-columns: 1fr;
+        gap: 8px;
+    }
+
+    .mgk-process-grid::before {
+        display: none;
+    }
+
+    .mgk-process-step {
+        min-height: 86px;
+        padding: 12px 12px 12px 64px;
+        border: 1px solid var(--mgk-border);
+        background: var(--mgk-white);
+        text-align: left;
+    }
+
+    .mgk-process-num {
+        position: absolute;
+        top: 14px;
+        left: 12px;
+        width: 42px;
+        height: 42px;
+        font-size: 18px;
+    }
+
+    .mgk-process-step h3 {
+        margin: 0 0 3px;
+        font-size: 14px;
+        line-height: 1.1;
+    }
+
+    .mgk-process-step:nth-child(2) h3,
+    .mgk-process-step:nth-child(4) h3 {
+        font-size: 0;
+    }
+
+    .mgk-process-step:nth-child(2) h3::before { content: "Matched in 6h"; font-size: 14px; }
+    .mgk-process-step:nth-child(4) h3::before { content: "Continue package"; font-size: 14px; }
+
+    .mgk-process-step strong {
+        display: block;
+        font-size: 9px;
+    }
+
+    .mgk-process-step ul {
+        margin: 6px 0 0;
+        font-size: 0;
+    }
+
+    .mgk-process-step ul::before {
+        color: var(--mgk-muted);
+        font-size: 10px;
+        line-height: 1.25;
+    }
+
+    .mgk-process-step:nth-child(1) ul::before { content: "Level + subject + schedule + budget"; }
+    .mgk-process-step:nth-child(2) ul::before { content: "3-5 best fits with demo video"; }
+    .mgk-process-step:nth-child(3) ul::before { content: "Free re-match if not fit"; }
+    .mgk-process-step:nth-child(4) ul::before { content: "8 or 16 lessons · Cancel anytime"; }
+
+    .mgk-process-step li,
+    .mgk-process-step p {
+        display: none;
+    }
+
+    .mgk-step-cta-full {
+        display: none;
+    }
+
+    .mgk-step-cta-mobile {
+        display: inline;
+    }
+
+    .mgk-how-center {
+        margin-top: 10px;
+    }
+
+    .mgk-how-process .mgk-btn-accent {
+        width: 100%;
+        min-height: 40px;
+        font-size: 11px;
+    }
+
+    .mgk-how-split {
+        grid-template-columns: 1fr;
+        gap: 10px;
+    }
+
+    .mgk-how-video .mgk-eyebrow {
+        font-size: 0;
+    }
+
+    .mgk-how-video .mgk-eyebrow::before {
+        content: "▶ VIDEO";
+        color: var(--mgk-accent);
+        font-size: 9px;
+    }
+
+    .mgk-how-video h2 {
+        font-size: 0;
+    }
+
+    .mgk-how-video h2::before {
+        content: "Watch (2 min)";
+        font-size: 18px;
+    }
+
+    .mgk-how-video p,
+    .mgk-how-video .mgk-check-list,
+    .mgk-how-video .mgk-button-row {
+        display: none;
+    }
+
+    .mgk-how-video-box {
+        min-height: 142px;
+    }
+
+    .mgk-how-video-box span {
+        padding: 10px 22px;
+        font-size: 12px;
+    }
+
+    .mgk-how-video-box small {
+        display: none;
+    }
+
+    .mgk-how-difference .mgk-section-head h2 {
+        font-size: 0;
+    }
+
+    .mgk-how-difference .mgk-section-head h2::before {
+        content: "What makes us different";
+        font-size: 18px;
+    }
+
+    .mgk-difference-grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    .mgk-difference-card {
+        min-height: 58px;
+        display: grid;
+        grid-template-columns: 30px minmax(0, 1fr);
+        gap: 8px 10px;
+        align-items: center;
+        padding: 10px;
+    }
+
+    .mgk-difference-card span {
+        grid-row: span 2;
+        min-width: 28px;
+        width: 28px;
+        height: 28px;
+        font-size: 12px;
+    }
+
+    .mgk-difference-card h3 {
+        margin: 0;
+        font-size: 0;
+        line-height: 1.1;
+    }
+
+    .mgk-difference-card:nth-child(1) h3::before { content: "6-hour matching"; font-size: 13px; }
+    .mgk-difference-card:nth-child(2) h3::before { content: "Every tutor verified"; font-size: 13px; }
+    .mgk-difference-card:nth-child(3) h3::before { content: "Track progress"; font-size: 13px; }
+    .mgk-difference-card:nth-child(4) h3::before { content: "Transparent pricing"; font-size: 13px; }
+    .mgk-difference-card:nth-child(5) h3::before { content: "Free re-match"; font-size: 13px; }
+    .mgk-difference-card:nth-child(6) h3::before { content: "In-app messaging"; font-size: 13px; }
+
+    .mgk-difference-card p {
+        display: none;
+    }
+
+    .mgk-difference-card strong {
+        margin: 0;
+        padding: 0;
+        border: 0;
+        background: transparent;
+        font-size: 0;
+    }
+
+    .mgk-difference-card:nth-child(1) strong::before { content: "INDUSTRY: 2-3 DAYS"; font-size: 9px; }
+    .mgk-difference-card:nth-child(2) strong::before { content: "100% CHECKED"; font-size: 9px; }
+    .mgk-difference-card:nth-child(3) strong::before { content: "WEEKLY DIGEST"; font-size: 9px; }
+    .mgk-difference-card:nth-child(4) strong::before { content: "$0 TO PARENT"; font-size: 9px; }
+    .mgk-difference-card:nth-child(5) strong::before { content: "IF NOT FIT"; font-size: 9px; }
+    .mgk-difference-card:nth-child(6) strong::before { content: "HOMEWORK HELP"; font-size: 9px; }
+
+    .mgk-how-guarantee {
+        padding: 22px 0;
+    }
+
+    .mgk-how-guarantee .mgk-section-head h2 {
+        font-size: 0;
+    }
+
+    .mgk-how-guarantee .mgk-section-head h2::before {
+        content: "Quality Guarantee";
+        font-size: 18px;
+    }
+
+    .mgk-how-guarantee .mgk-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .mgk-guarantee-card {
+        min-height: 72px;
+        padding: 10px;
+    }
+
+    .mgk-guarantee-card span {
+        margin-bottom: 4px;
+        font-size: 18px;
+    }
+
+    .mgk-guarantee-card h3 {
+        margin: 0;
+        font-size: 0;
+    }
+
+    .mgk-guarantee-card:nth-child(1) h3::before { content: "4.8 min"; font-size: 12px; }
+    .mgk-guarantee-card:nth-child(2) h3::before { content: "Degree"; font-size: 12px; }
+    .mgk-guarantee-card:nth-child(3) h3::before { content: "Background"; font-size: 12px; }
+    .mgk-guarantee-card:nth-child(4) h3::before { content: "Money-back"; font-size: 12px; }
+
+    .mgk-guarantee-card p {
+        display: none;
+    }
+
+    .mgk-how-pricing .mgk-section-head h2,
+    .mgk-how-verification .mgk-section-head h2,
+    .mgk-how-comparison .mgk-section-head h2,
+    .mgk-how-concerns .mgk-section-head h2,
+    .mgk-how-faq .mgk-section-head h2 {
+        font-size: 0;
+    }
+
+    .mgk-how-pricing .mgk-section-head h2::before { content: "Transparent pricing"; font-size: 18px; }
+    .mgk-how-verification .mgk-section-head h2::before { content: "4-step verification"; font-size: 18px; }
+    .mgk-how-comparison .mgk-section-head h2::before { content: "vs Traditional"; font-size: 18px; }
+    .mgk-how-concerns .mgk-section-head h2::before { content: "Common concerns"; font-size: 18px; }
+    .mgk-how-faq .mgk-section-head h2::before { content: "FAQ"; font-size: 20px; }
+
+    .mgk-price-panel,
+    .mgk-included-card {
+        padding: 12px;
+    }
+
+    .mgk-price-panel h3,
+    .mgk-included-card,
+    .mgk-how-pricing .mgk-how-center {
+        display: none;
+    }
+
+    .mgk-price-lines div {
+        display: flex;
+        padding: 10px 0;
+    }
+
+    .mgk-price-lines div:nth-child(n+4) {
+        display: none;
+    }
+
+    .mgk-price-lines div:nth-child(3) {
+        margin: 0 -6px -1px;
+        padding: 10px 6px;
+        border: 1px solid var(--mgk-accent);
+        background: var(--mgk-accent-soft);
+    }
+
+    .mgk-price-lines div:nth-child(1) span,
+    .mgk-price-lines div:nth-child(2) span,
+    .mgk-price-lines div:nth-child(3) span,
+    .mgk-price-lines div:nth-child(1) strong,
+    .mgk-price-lines div:nth-child(2) strong,
+    .mgk-price-lines div:nth-child(3) strong {
+        font-size: 0;
+    }
+
+    .mgk-price-lines div:nth-child(1) span::before { content: "HOURLY"; font-size: 10px; }
+    .mgk-price-lines div:nth-child(2) span::before { content: "TRIAL"; font-size: 10px; }
+    .mgk-price-lines div:nth-child(3) span::before { content: "AGENCY FEE"; font-size: 10px; }
+    .mgk-price-lines div:nth-child(1) strong::before { content: "$30-$150"; font-size: 10px; }
+    .mgk-price-lines div:nth-child(2) strong::before { content: "40% OFF"; font-size: 10px; }
+    .mgk-price-lines div:nth-child(3) strong::before { content: "$0"; font-size: 10px; }
+
+    .mgk-verification-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+    }
+
+    .mgk-verification-card {
+        min-height: 64px;
+        padding: 9px;
+    }
+
+    .mgk-verification-card h3 {
+        font-size: 0;
+    }
+
+    .mgk-verification-card:nth-child(1) h3::before { content: "Identity"; font-size: 12px; }
+    .mgk-verification-card:nth-child(2) h3::before { content: "Credentials"; font-size: 12px; }
+    .mgk-verification-card:nth-child(3) h3::before { content: "Background"; font-size: 12px; }
+    .mgk-verification-card:nth-child(4) h3::before { content: "Demo"; font-size: 12px; }
+
+    .mgk-verification-grid ul {
+        display: none;
+    }
+
+    .mgk-acceptance {
+        margin-top: 8px;
+        padding: 9px;
+    }
+
+    .mgk-acceptance strong {
+        font-size: 0;
+    }
+
+    .mgk-acceptance strong::before {
+        content: "~35% pass";
+        font-size: 16px;
+    }
+
+    .mgk-acceptance p {
+        display: none;
+    }
+
+    .mgk-compare-table {
+        overflow: visible;
+    }
+
+    .mgk-compare-row {
+        min-width: 0;
+        grid-template-columns: 1.05fr .78fr .78fr;
+        font-size: 10px;
+    }
+
+    .mgk-compare-row > div {
+        padding: 8px 5px;
+    }
+
+    .mgk-compare-row:nth-child(n+7) {
+        display: none;
+    }
+
+    .mgk-compare-head > div:nth-child(2),
+    .mgk-compare-head > div:nth-child(3) {
+        font-size: 0;
+    }
+
+    .mgk-compare-head > div:nth-child(2)::before { content: "MGK"; font-size: 10px; }
+    .mgk-compare-head > div:nth-child(3)::before { content: "Trad"; font-size: 10px; }
+
+    .mgk-compare-row:nth-child(2) > div:nth-child(1),
+    .mgk-compare-row:nth-child(3) > div:nth-child(1),
+    .mgk-compare-row:nth-child(4) > div:nth-child(1),
+    .mgk-compare-row:nth-child(5) > div:nth-child(1),
+    .mgk-compare-row:nth-child(6) > div:nth-child(1),
+    .mgk-compare-row:nth-child(2) > div:nth-child(2),
+    .mgk-compare-row:nth-child(3) > div:nth-child(2),
+    .mgk-compare-row:nth-child(4) > div:nth-child(2),
+    .mgk-compare-row:nth-child(5) > div:nth-child(2),
+    .mgk-compare-row:nth-child(6) > div:nth-child(2),
+    .mgk-compare-row:nth-child(2) > div:nth-child(3),
+    .mgk-compare-row:nth-child(3) > div:nth-child(3),
+    .mgk-compare-row:nth-child(4) > div:nth-child(3),
+    .mgk-compare-row:nth-child(5) > div:nth-child(3),
+    .mgk-compare-row:nth-child(6) > div:nth-child(3) {
+        font-size: 0;
+    }
+
+    .mgk-compare-row:nth-child(2) > div:nth-child(1)::before { content: "Match"; font-size: 10px; }
+    .mgk-compare-row:nth-child(2) > div:nth-child(2)::before { content: "6h ✓"; font-size: 10px; }
+    .mgk-compare-row:nth-child(2) > div:nth-child(3)::before { content: "2-3d"; font-size: 10px; }
+    .mgk-compare-row:nth-child(3) > div:nth-child(1)::before { content: "Demo"; font-size: 10px; }
+    .mgk-compare-row:nth-child(3) > div:nth-child(2)::before { content: "Yes ✓"; font-size: 10px; }
+    .mgk-compare-row:nth-child(3) > div:nth-child(3)::before { content: "No"; font-size: 10px; }
+    .mgk-compare-row:nth-child(4) > div:nth-child(1)::before { content: "Trial"; font-size: 10px; }
+    .mgk-compare-row:nth-child(4) > div:nth-child(2)::before { content: "40% ✓"; font-size: 10px; }
+    .mgk-compare-row:nth-child(4) > div:nth-child(3)::before { content: "Full"; font-size: 10px; }
+    .mgk-compare-row:nth-child(5) > div:nth-child(1)::before { content: "Log"; font-size: 10px; }
+    .mgk-compare-row:nth-child(5) > div:nth-child(2)::before { content: "Built-in ✓"; font-size: 10px; }
+    .mgk-compare-row:nth-child(5) > div:nth-child(3)::before { content: "No"; font-size: 10px; }
+    .mgk-compare-row:nth-child(6) > div:nth-child(1)::before { content: "Re-match"; font-size: 10px; }
+    .mgk-compare-row:nth-child(6) > div:nth-child(2)::before { content: "Free ✓"; font-size: 10px; }
+    .mgk-compare-row:nth-child(6) > div:nth-child(3)::before { content: "Pay"; font-size: 10px; }
+
+    .mgk-how-concerns .mgk-grid {
+        grid-template-columns: 1fr;
+        gap: 6px;
+    }
+
+    .mgk-concern-card {
+        min-height: 62px;
+        padding: 10px;
+    }
+
+    .mgk-concern-card:nth-child(n+4) {
+        display: none;
+    }
+
+    .mgk-concern-card h3 {
+        margin: 0;
+        font-size: 0;
+    }
+
+    .mgk-concern-card:nth-child(1) h3::before { content: "\"Child click với tutor?\""; font-size: 12px; }
+    .mgk-concern-card:nth-child(2) h3::before { content: "\"Tutor real?\""; font-size: 12px; }
+    .mgk-concern-card:nth-child(3) h3::before { content: "\"Tutor cancel?\""; font-size: 12px; }
+
+    .mgk-concern-card span {
+        display: none;
+    }
+
+    .mgk-concern-card p {
+        margin: 7px 0 0;
+        font-size: 0;
+    }
+
+    .mgk-concern-card:nth-child(1) p::before { content: "FREE RE-MATCH"; font-size: 10px; }
+    .mgk-concern-card:nth-child(2) p::before { content: "4-STEP VERIFY"; font-size: 10px; }
+    .mgk-concern-card:nth-child(3) p::before { content: "REFUND + CREDIT"; font-size: 10px; }
+
+    .mgk-how-faq .mgk-section-head {
+        text-align: center;
+    }
+
+    .mgk-how-faq-groups {
+        max-width: none;
+    }
+
+    .mgk-how-faq-group + .mgk-how-faq-group {
+        margin-top: 12px;
+    }
+
+    .mgk-how-faq-group h3 {
+        margin: 0 0 6px;
+        padding-bottom: 5px;
+        font-size: 0;
+    }
+
+    .mgk-how-faq-group:nth-child(1) h3::before { content: "Finding"; font-size: 13px; }
+    .mgk-how-faq-group:nth-child(2) h3::before { content: "Pricing"; font-size: 13px; }
+    .mgk-how-faq-group:nth-child(3) h3::before { content: "Lessons"; font-size: 13px; }
+    .mgk-how-faq-group:nth-child(n+4),
+    .mgk-how-faq-group .mgk-faq-item:nth-child(n+3) {
+        display: none;
+    }
+
+    .mgk-how-faq .mgk-faq-item button {
+        min-height: 32px;
+        padding: 7px 9px;
+        border-radius: 0;
+        font-size: 0;
+        text-transform: uppercase;
+    }
+
+    .mgk-how-faq .mgk-how-faq-group:nth-child(1) .mgk-faq-item:nth-child(1) button span:first-child::before { content: "MATCHING TIME?"; font-size: 10px; }
+    .mgk-how-faq .mgk-how-faq-group:nth-child(1) .mgk-faq-item:nth-child(2) button span:first-child::before { content: "DON'T LIKE?"; font-size: 10px; }
+    .mgk-how-faq .mgk-how-faq-group:nth-child(2) .mgk-faq-item:nth-child(1) button span:first-child::before { content: "COST?"; font-size: 10px; }
+    .mgk-how-faq .mgk-how-faq-group:nth-child(2) .mgk-faq-item:nth-child(2) button span:first-child::before { content: "COMMISSION?"; font-size: 10px; }
+    .mgk-how-faq .mgk-how-faq-group:nth-child(3) .mgk-faq-item:nth-child(1) button span:first-child::before { content: "DURATION?"; font-size: 10px; }
+    .mgk-how-faq .mgk-how-faq-group:nth-child(3) .mgk-faq-item:nth-child(2) button span:first-child::before { content: "CANCEL?"; font-size: 10px; }
+
+    .mgk-how-page .mgk-cta-band {
+        padding: 22px 0;
+    }
+
+    .mgk-how-page .mgk-cta-band h2 {
+        font-size: 0;
+    }
+
+    .mgk-how-page .mgk-cta-band h2::before {
+        content: "Ready?";
+        color: var(--mgk-white);
+        font-size: 18px;
+    }
+
+    .mgk-how-page .mgk-cta-band p {
+        font-size: 0;
+    }
+
+    .mgk-how-page .mgk-cta-band > .mgk-shell > p::before {
+        content: "12,400+ parents · 6h match";
+        color: var(--mgk-white);
+        font-size: 10px;
+    }
+
+    .mgk-how-page .mgk-cta-actions {
+        display: block;
+        margin-top: 12px;
+    }
+
+    .mgk-how-page .mgk-cta-actions .mgk-btn {
+        width: 100%;
+        min-height: 36px;
+        border-radius: 0;
+        font-size: 0;
+    }
+
+    .mgk-how-page .mgk-cta-actions .mgk-btn-light::before {
+        content: "Find Tutor Now →";
+        color: var(--mgk-accent);
+        font-size: 11px;
+    }
+
+    .mgk-how-page .mgk-cta-actions .mgk-btn-accent,
+    .mgk-how-page .mgk-cta-note {
+        display: none;
+    }
+
+    .mgk-how-page .mgk-footer {
+        padding: 18px 0;
+        background: var(--mgk-dark);
+    }
+
+    .mgk-how-page .mgk-footer-grid {
+        display: block;
+    }
+
+    .mgk-how-page .mgk-footer-grid > div:first-child p,
+    .mgk-how-page .mgk-footer-grid h2,
+    .mgk-how-page .mgk-footer-grid > div:nth-child(n+3) {
+        display: none;
+    }
+
+    .mgk-how-page .mgk-footer-logo {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--mgk-white);
+        font-size: 12px;
+    }
+
+    .mgk-how-page .mgk-footer-grid > div:nth-child(2) {
+        display: flex;
+        gap: 7px;
+        flex-wrap: wrap;
+    }
+
+    .mgk-how-page .mgk-footer-grid > div:nth-child(2) a {
+        font-size: 0;
+        color: #bdbdbd;
+    }
+
+    .mgk-how-page .mgk-footer-grid > div:nth-child(2) a:nth-of-type(1)::before { content: "Browse"; font-size: 9px; }
+    .mgk-how-page .mgk-footer-grid > div:nth-child(2) a:nth-of-type(2)::before { content: "How"; font-size: 9px; }
+    .mgk-how-page .mgk-footer-grid > div:nth-child(2) a:nth-of-type(3)::before { content: "Pricing"; font-size: 9px; }
+    .mgk-how-page .mgk-footer-grid > div:nth-child(2) a:nth-of-type(4)::before { content: "Terms"; font-size: 9px; }
+
+    .mgk-how-page .mgk-footer-bottom {
+        display: block;
+        margin-top: 10px;
+        border-top: 0;
+        color: #7f7f7f;
+        font-size: 0;
+    }
+
+    .mgk-how-page .mgk-footer-bottom::before {
+        content: "© 2026 Margick";
+        font-size: 9px;
+    }
+
+    .mgk-how-mobile-sticky {
+        position: fixed;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 80;
+        min-height: 42px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-top: 1px solid var(--mgk-dark);
+        background: var(--mgk-accent);
+        color: var(--mgk-white);
+        font-size: 12px;
+        font-weight: 900;
+        text-decoration: none;
+    }
+}

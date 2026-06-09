@@ -1,0 +1,57 @@
+:root {
+    /* Colour palette */
+    --mgk-white: #ffffff;
+    --mgk-bg: #FAFAF7;
+    --mgk-surface: #f4f4f4;
+    --mgk-surface-2: #eeeeee;
+    --mgk-border: #d4d4d4;
+    --mgk-muted: #707070;
+    --mgk-ink: #111111;
+    --mgk-text: #1a1a1a;
+    --mgk-dark: #1a1a1a;
+    --mgk-dark-2: #2c2c2c;
+    --mgk-accent: #D63B1F;
+    --mgk-accent-soft: #FBE7E3;
+    --mgk-success: #1f8a42;
+    --mgk-success-soft: #DCFCE7;
+    --mgk-warning: #92400e;
+    --mgk-warning-soft: #FEF3C7;
+    --mgk-info: #1e40af;
+    --mgk-info-soft: #EFF6FF;
+
+    /* Spacing scale (4 px base) */
+    --mgk-sp-1: 4px;
+    --mgk-sp-2: 8px;
+    --mgk-sp-3: 12px;
+    --mgk-sp-4: 16px;
+    --mgk-sp-5: 20px;
+    --mgk-sp-6: 24px;
+    --mgk-sp-8: 32px;
+    --mgk-sp-10: 40px;
+    --mgk-sp-12: 48px;
+    --mgk-sp-16: 64px;
+
+    /* Layout */
+    --mgk-container: 1180px;
+
+    /* Radii */
+    --mgk-radius-sm: 2px;
+    --mgk-radius-md: 4px;
+    --mgk-radius-lg: 8px;
+    --mgk-radius-pill: 100px;
+
+    /* Elevation */
+    --mgk-shadow-card: 0 8px 24px rgba(0, 0, 0, .06);
+
+    /* Z-index layers */
+    --mgk-z-header: 50;
+    --mgk-z-filter: 200;
+    --mgk-z-modal: 400;
+    --mgk-z-toast: 500;
+
+    /* Motion */
+    --mgk-transition: 150ms ease;
+
+    /* Typography */
+    --mgk-font: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}

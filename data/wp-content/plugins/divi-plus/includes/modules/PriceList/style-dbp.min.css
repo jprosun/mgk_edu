@@ -1,0 +1,7 @@
+.et_divi_builder #et_builder_outer_content .dipl_price_list_layout{display:flex;flex-wrap:wrap;align-items:flex-start}
+.et_divi_builder #et_builder_outer_content .dipl_price_list_layout.dipl_currency_pos_right .dipl_price_list_item_price_wrap {
+    display: inline-flex;
+    flex-wrap: wrap;
+    flex-direction: row-reverse;
+    align-items: center;
+}

@@ -1,0 +1,132 @@
+.et_divi_builder #et_builder_outer_content .dipl_list_layout{
+	display: flex;
+	flex-wrap: wrap;
+}
+.et_divi_builder #et_builder_outer_content .dipl_list_layout.dipl_list_default{
+	flex-direction: column;
+}
+.et_divi_builder #et_builder_outer_content .dipl_list_layout.dipl_list_inline{
+	flex-direction: row;
+}
+.et_divi_builder #et_builder_outer_content .dipl_list .dipl_list_layout .dipl_list_item{
+	margin-bottom: 0;
+}
+.et_divi_builder #et_builder_outer_content .dipl_list_item .dipl-list-item-wrap{
+	white-space: nowrap;
+}
+.et_divi_builder #et_builder_outer_content .dipl_list .dipl_list-icon .et-pb-icon{
+	font-size: 22px;
+	vertical-align: middle;
+    width: 40px;
+    display: inline-block;
+}
+.et_divi_builder #et_builder_outer_content .dipl_list .dipl_list-icon{
+    margin-right: 5px;
+}
+.et_divi_builder #et_builder_outer_content .dipl_list .dipl_list-img_icon{
+	width: 38px;
+	height: auto;
+	align-self: center;
+	vertical-align: middle;
+	margin-right: 5px;
+}
+.et_divi_builder #et_builder_outer_content .dipl_list_layout .dipl_list-item_text,
+.et_divi_builder #et_builder_outer_content .dipl_list_layout .dipl_list-link{
+	display: inline-flex;
+	align-self: center;
+	vertical-align: top;
+	white-space: initial;
+}
+.et_divi_builder #et_builder_outer_content .dipl_list_layout .dipl_list-divider{
+	border-color: #d3d3d3;
+	border-style: solid;
+}
+.et_divi_builder #et_builder_outer_content .dipl_list_layout.dipl_hide_last_divider .dipl_list_item:last-child .dipl_list-divider{
+	display: none;
+}
+
+/** Default Layout **/
+.et_divi_builder #et_builder_outer_content .dipl_list_default .dipl_list-icon{
+    display: inline-block;
+}
+
+/** Inline Layout **/
+.et_divi_builder #et_builder_outer_content .dipl_list_inline .dipl-list-item-wrap{
+	display: flex;
+}
+
+/** Icon styles **/
+/* Square */
+.et_divi_builder #et_builder_outer_content .dipl_list_layout .el-icon-square {
+	padding: 12px;
+}
+
+/* circle */
+.et_divi_builder #et_builder_outer_content .dipl_list_layout .el-icon-circle {
+	padding: 12px;
+	border-radius: 50%;
+}
+
+.et_divi_builder #et_builder_outer_content .dipl_list_layout .et-pb-icon-shape-border {
+	border: 2px solid;
+}
+
+/* hexagon */
+.et_divi_builder #et_builder_outer_content .dipl_list_layout .et-pb-icon.el-icon-hexagon {
+    position: relative;
+    z-index: 99;
+    margin-left: -40.25%;
+    padding: 12px;
+    -webkit-transform: rotate(-30deg);
+    transform: rotate(-30deg)
+}
+.et_divi_builder #et_builder_outer_content .dipl_list_layout .use_hexagon {
+    z-index: -1
+}
+.et_divi_builder #et_builder_outer_content .dipl_list_layout .use_hexagon .hexagon-wrapper {
+    display: inline-block;
+    position: relative
+}
+.et_divi_builder #et_builder_outer_content .dipl_list_layout .use_hexagon .hexagon-wrapper .hex {
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden;
+    -webkit-transform: rotate(30deg);
+    transform: rotate(30deg)
+}
+.et_divi_builder #et_builder_outer_content .dipl_list_layout .use_hexagon .hexagon {
+    width: 57.735%;
+    height: 100%;
+    margin: auto
+}
+.et_divi_builder #et_builder_outer_content .dipl_list_layout .use_hexagon .hexagon:before {
+    -webkit-transform: rotate(60deg) translateZ(0);
+    transform: rotate(60deg) translateZ(0)
+}
+.et_divi_builder #et_builder_outer_content .dipl_list_layout .use_hexagon .hexagon:after,
+.et_divi_builder #et_builder_outer_content .dipl_list_layout .use_hexagon .hexagon:before {
+    position: absolute;
+    top: 0;
+    right: 21.1325%;
+    -webkit-box-sizing: border-box;
+    box-sizing: border-box;
+    background-color: inherit;
+    width: inherit;
+    height: inherit;
+    content: "";
+    -webkit-backface-visibility: hidden;
+    backface-visibility: hidden
+}
+.et_divi_builder #et_builder_outer_content .dipl_list_layout .use_hexagon .hexagon:after {
+    -webkit-transform: rotate(-60deg) translateZ(0);
+    transform: rotate(-60deg) translateZ(0)
+}
+
+.et_divi_builder #et_builder_outer_content .dipl_list_layout .et-pb-icon-shape-border{
+	border:2px solid
+}
+.et_divi_builder #et_builder_outer_content .dipl_list_layout .hexagon.et-pb-icon-shape-border:after,
+.et_divi_builder #et_builder_outer_content .dipl_list_layout .hexagon.et-pb-icon-shape-border:before{
+	border-top:2px solid;
+	border-bottom:2px solid;
+	border-color:inherit
+}

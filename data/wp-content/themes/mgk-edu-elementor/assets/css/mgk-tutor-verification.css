@@ -1,0 +1,493 @@
+.mgk-page-tutor-verification .mgk-main,
+.mgk-page-tutor-verification .content-area {
+    background: #f4f4f4;
+}
+
+.mgk-page-tutor-verification .elementor-section-boxed > .elementor-container {
+    width: min(calc(100% - 24px), 1680px) !important;
+    max-width: 1680px !important;
+}
+
+.mgk-tutor-verification {
+    box-sizing: border-box;
+    width: min(100%, 1680px);
+    margin: 0 auto;
+    padding: 12px;
+    color: #111;
+    font-family: "Courier New", Courier, monospace;
+}
+
+.mgk-tutor-verification * {
+    box-sizing: border-box;
+    letter-spacing: 0;
+}
+
+.mgk-tutor-verification__shell {
+    border: 2px solid #202020;
+    background: #fff;
+    overflow: visible;
+}
+
+.mgk-tutor-verification-sec {
+    position: absolute;
+    top: -13px;
+    right: -10px;
+    z-index: 2;
+    display: inline-flex;
+    min-height: 18px;
+    align-items: center;
+    background: #df371f;
+    color: #fff;
+    padding: 3px 10px;
+    font-size: 9px;
+    line-height: 1;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.mgk-tutor-verification-status {
+    position: relative;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 24px;
+    padding: 28px 32px 30px;
+    border-bottom: 1px dashed #bcbcbc;
+}
+
+.mgk-tutor-verification h1,
+.mgk-tutor-verification h2 {
+    margin: 0;
+    color: #111;
+    line-height: 1.1;
+    font-weight: 900;
+}
+
+.mgk-tutor-verification h1 {
+    font-size: 24px;
+}
+
+.mgk-tutor-verification h2 {
+    font-size: 18px;
+}
+
+.mgk-tutor-verification p,
+.mgk-tutor-verification em,
+.mgk-tutor-verification span,
+.mgk-tutor-verification small {
+    overflow-wrap: anywhere;
+}
+
+.mgk-tutor-verification-status p,
+.mgk-tutor-verification-video > p,
+.mgk-tutor-verification-req p,
+.mgk-tutor-verification-upload em,
+.mgk-tutor-verification-timeline > p,
+.mgk-tutor-verification-timeline li em,
+.mgk-tutor-verification-message p,
+.mgk-tutor-verification-rejected p,
+.mgk-tutor-verification-actions span {
+    color: #6f7a84;
+    font-size: 10px;
+    line-height: 1.55;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.mgk-tutor-verification-status p {
+    margin: 10px 0 0;
+}
+
+.mgk-tutor-verification-status aside {
+    min-width: 150px;
+    border: 1px solid #df371f;
+    background: #fde5e0;
+    padding: 18px 16px;
+    text-align: center;
+}
+
+.mgk-tutor-verification-status aside span {
+    display: block;
+    color: #9a7a72;
+    font-size: 9px;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.mgk-tutor-verification-status aside strong {
+    display: block;
+    margin-top: 6px;
+    color: #df371f;
+    font-size: 18px;
+    font-weight: 900;
+}
+
+.mgk-tutor-verification-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.25fr) minmax(420px, 0.95fr);
+    gap: 28px;
+    padding: 32px;
+}
+
+.mgk-tutor-verification-left {
+    min-width: 0;
+}
+
+.mgk-tutor-verification-video {
+    margin-bottom: 24px;
+}
+
+.mgk-tutor-verification-video h2,
+.mgk-tutor-verification-req h2 {
+    margin-bottom: 10px;
+}
+
+.mgk-tutor-verification-upload {
+    border: 1px dashed #999;
+    background: #fff;
+    padding: 28px 28px 22px;
+}
+
+.mgk-tutor-verification-upload > div {
+    display: grid;
+    min-height: 120px;
+    place-items: center;
+    background: repeating-linear-gradient(45deg, #f0f0f0 0 7px, #e4e4e4 7px 13px);
+}
+
+.mgk-tutor-verification-upload.is-document-ready > div {
+    gap: 10px;
+    min-height: 150px;
+    padding: 18px;
+    background: #fff;
+    border: 1px solid #df371f;
+}
+
+.mgk-tutor-verification-upload.is-document-ready > div img {
+    max-width: 220px;
+    max-height: 86px;
+    object-fit: contain;
+    border: 1px solid #d8d8d8;
+}
+
+.mgk-tutor-verification-upload > div strong {
+    display: inline-flex;
+    min-height: 42px;
+    align-items: center;
+    background: #292929;
+    color: #fff;
+    padding: 0 26px;
+    font-size: 12px;
+    font-weight: 900;
+}
+
+.mgk-tutor-verification-upload > div small {
+    color: #df371f;
+    font-size: 10px;
+    line-height: 1.35;
+    font-weight: 900;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.mgk-tutor-verification-upload > span {
+    display: block;
+    height: 8px;
+    margin-top: 14px;
+    background: #e7e7e7;
+}
+
+.mgk-tutor-verification-upload > span b {
+    display: block;
+    width: 64%;
+    height: 100%;
+    background: #df371f;
+    transition: width 220ms ease;
+}
+
+.mgk-tutor-verification-upload em {
+    display: block;
+    margin-top: 8px;
+    text-align: center;
+    font-style: normal;
+}
+
+.mgk-tutor-verification-req {
+    border: 1px solid #999;
+    background: #fff;
+    padding: 24px;
+}
+
+.mgk-tutor-verification-req-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 12px;
+    margin: 16px 0;
+}
+
+.mgk-tutor-verification-req-grid article {
+    border: 1px solid #999;
+    background: #fff;
+    padding: 18px 12px;
+    text-align: center;
+}
+
+.mgk-tutor-verification-req-grid strong {
+    display: block;
+    color: #df371f;
+    font-size: 16px;
+    font-weight: 900;
+}
+
+.mgk-tutor-verification-req-grid span {
+    display: block;
+    margin-top: 5px;
+    color: #6f7a84;
+    font-size: 9px;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.mgk-tutor-verification-timeline {
+    position: relative;
+    align-self: start;
+    border: 1px solid #999;
+    background: #fff;
+    padding: 28px;
+}
+
+.mgk-tutor-verification-timeline > p {
+    margin: 6px 0 22px;
+}
+
+.mgk-tutor-verification-timeline ol {
+    display: grid;
+    gap: 0;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.mgk-tutor-verification-timeline li {
+    display: grid;
+    grid-template-columns: 22px minmax(0, 1fr);
+    gap: 12px;
+    align-items: start;
+    border-bottom: 1px solid #e2e2e2;
+    padding: 14px 0;
+}
+
+.mgk-tutor-verification-timeline li.is-active {
+    margin-left: -14px;
+    margin-right: -14px;
+    background: #fde5e0;
+    padding-left: 14px;
+    padding-right: 14px;
+}
+
+.mgk-tutor-verification-timeline li span {
+    width: 8px;
+    aspect-ratio: 1;
+    margin-top: 4px;
+    border: 1px solid #bbb;
+    border-radius: 999px;
+}
+
+.mgk-tutor-verification-timeline li.is-done span,
+.mgk-tutor-verification-timeline li.is-active span {
+    border-color: #df371f;
+    background: #df371f;
+}
+
+.mgk-tutor-verification-timeline li strong {
+    display: block;
+    color: #7b858d;
+    font-size: 12px;
+    line-height: 1.25;
+    font-weight: 900;
+}
+
+.mgk-tutor-verification-timeline li.is-done strong,
+.mgk-tutor-verification-timeline li.is-active strong {
+    color: #df371f;
+}
+
+.mgk-tutor-verification-timeline li em {
+    display: block;
+    margin-top: 3px;
+    font-style: normal;
+}
+
+.mgk-tutor-verification-message {
+    margin-top: 18px;
+    background: #292929;
+    color: #fff;
+    padding: 14px;
+}
+
+.mgk-tutor-verification-message strong {
+    display: block;
+    font-size: 10px;
+    font-weight: 900;
+}
+
+.mgk-tutor-verification-message p {
+    margin: 6px 0 0;
+    color: #fff;
+}
+
+.mgk-tutor-verification-message a {
+    color: #df371f;
+    text-decoration: none;
+    font-weight: 900;
+}
+
+.mgk-tutor-verification-rejected {
+    margin-top: 12px;
+    border: 1px solid #df371f;
+    background: #fff;
+    padding: 14px;
+}
+
+.mgk-tutor-verification-rejected strong {
+    color: #df371f;
+    font-size: 10px;
+    font-weight: 900;
+}
+
+.mgk-tutor-verification-rejected p {
+    margin: 6px 0 0;
+}
+
+.mgk-tutor-verification-actions {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+    border-top: 1px dashed #bcbcbc;
+    background: #f7f7f7;
+    padding: 28px 32px;
+}
+
+.mgk-tutor-verification-actions div {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+}
+
+.mgk-tutor-verification-actions a {
+    display: inline-flex;
+    min-width: 180px;
+    min-height: 58px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #111 !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    color: #111 !important;
+    padding: 0 22px;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.mgk-tutor-verification-actions .mgk-tutor-verification-primary {
+    border-color: #df371f !important;
+    background: #df371f !important;
+    color: #fff !important;
+}
+
+@media (max-width: 900px) {
+    .mgk-page-tutor-verification {
+        overflow-x: hidden;
+    }
+
+    .mgk-page-tutor-verification .elementor-section-boxed > .elementor-container {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .mgk-page-tutor-verification .elementor-section,
+    .mgk-page-tutor-verification .elementor-container,
+    .mgk-page-tutor-verification .elementor-column,
+    .mgk-page-tutor-verification .elementor-widget-wrap,
+    .mgk-page-tutor-verification .elementor-widget-container {
+        max-width: 100% !important;
+        overflow-x: hidden;
+    }
+
+    .mgk-page-tutor-verification .elementor-column-gap-default > .elementor-column > .elementor-element-populated {
+        padding: 0 !important;
+    }
+
+    .mgk-tutor-verification {
+        width: 100% !important;
+        max-width: 100% !important;
+        padding: 8px;
+        overflow: hidden;
+    }
+
+    .mgk-tutor-verification__shell {
+        overflow: hidden;
+    }
+
+    .mgk-tutor-verification-sec {
+        position: static;
+        width: max-content;
+        max-width: 100%;
+        margin-left: auto;
+        margin-bottom: 10px;
+    }
+
+    .mgk-tutor-verification-status,
+    .mgk-tutor-verification-grid,
+    .mgk-tutor-verification-actions {
+        padding: 20px 16px;
+    }
+
+    .mgk-tutor-verification-status,
+    .mgk-tutor-verification-actions {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .mgk-tutor-verification h1 {
+        font-size: 20px;
+    }
+
+    .mgk-tutor-verification h2 {
+        font-size: 17px;
+    }
+
+    .mgk-tutor-verification-status aside {
+        width: 100%;
+        min-width: 0;
+    }
+
+    .mgk-tutor-verification-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mgk-tutor-verification-upload {
+        padding: 16px;
+    }
+
+    .mgk-tutor-verification-upload > div {
+        min-height: 100px;
+    }
+
+    .mgk-tutor-verification-timeline {
+        padding: 22px 14px;
+    }
+
+    .mgk-tutor-verification-req-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mgk-tutor-verification-actions div,
+    .mgk-tutor-verification-actions a {
+        width: 100%;
+    }
+}

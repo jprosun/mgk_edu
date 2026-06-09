@@ -1,0 +1,90 @@
+# MariaDB 10.11 (Alpine 3.21) configuration
+# Reference: https://mariadb.com/kb/en/server-system-variables/
+# Reference: https://mariadb.com/kb/en/changes-improvements-in-mariadb-1011/
+#
+# MIGRATION NOTES FROM 10.5 → 10.11:
+# REMOVED (invalid in MariaDB 10.6+, will cause startup ERROR):
+#   innodb_file_format = Barracuda   (merged into InnoDB default since 10.3)
+#   innodb_large_prefix = 1          (always ON since MariaDB 10.3)
+#   innodb_additional_mem_pool_size  (removed in 10.0)
+# CHANGED:
+#   innodb_flush_method: "littlesync" deprecated, use O_DIRECT for SSDs
+# Reference: https://mariadb.com/kb/en/innodb-system-variables/
+
+[client]
+port		= 3306
+socket		= /run/mysqld/mysqld.sock
+
+[client-server]
+character-sets-dir=utf8mb4
+
+[mysqld]
+port		= 3306
+socket		= /run/mysqld/mysqld.sock
+skip-external-locking
+
+# === Buffer / Cache ===
+# These defaults are conservative for a shared-host container.
+# Tune based on available RAM: innodb_buffer_pool_size should be 50-80% of dedicated RAM.
+key_buffer_size = 16M
+max_allowed_packet = 64M
+table_open_cache = 256
+sort_buffer_size = 512K
+net_buffer_length = 8K
+read_buffer_size = 256K
+read_rnd_buffer_size = 512K
+myisam_sort_buffer_size = 8M
+
+# === Replication ===
+# Binary logging enabled for replication and point-in-time recovery.
+# Required for Galera cluster synchronization.
+skip-log-bin
+server-id = 1
+
+# === InnoDB ===
+# innodb_file_per_table=ON: each table stored in its own .ibd file.
+# WHY: allows reclaim of disk space after DROP TABLE without full dump/restore.
+# Also required for ROW_FORMAT=COMPRESSED (used by WordPress utf8mb4 with long keys).
+# Reference: https://mariadb.com/kb/en/innodb-file-per-table-tablespaces/
+default_storage_engine = innodb
+innodb_file_per_table = 1
+
+# === Character Set ===
+# utf8mb4: full Unicode (4-byte chars) including emoji.
+# WordPress 6.x requires utf8mb4 for proper emoji storage.
+# utf8mb4_unicode_ci: most accurate Unicode collation.
+# Reference: https://make.wordpress.org/core/2015/04/02/the-utf8mb4-upgrade/
+character-set-server = utf8mb4
+collation-server = utf8mb4_unicode_ci
+skip-character-set-client-handshake
+
+# === I/O Method ===
+# innodb_flush_method=fsync: bypass OS page cache for InnoDB data files.
+# WHY: avoids double caching (InnoDB buffer pool + OS page cache).
+# Reduces memory usage; improves I/O throughput on Linux.
+# NOTE: Use fsync for Docker on Mac (O_DIRECT not supported on macOS).
+# Reference: https://mariadb.com/kb/en/innodb-system-variables/#innodb_flush_method
+innodb_flush_method=fsync
+
+# innodb_use_native_aio=OFF: disable Linux native AIO in containers.
+# WHY: some container environments (Docker on Mac, older Linux kernels) don't
+# support io_submit() correctly; OFF falls back to POSIX AIO.
+# Production on bare Linux: can set ON for better performance.
+innodb_use_native_aio=OFF
+
+[mysqldump]
+quick
+max_allowed_packet = 64M
+
+[mysql]
+no-auto-rehash
+character-sets-dir=utf8mb4
+
+[myisamchk]
+key_buffer_size = 20M
+sort_buffer_size = 20M
+read_buffer = 2M
+write_buffer = 2M
+
+[mysqlhotcopy]
+interactive-timeout

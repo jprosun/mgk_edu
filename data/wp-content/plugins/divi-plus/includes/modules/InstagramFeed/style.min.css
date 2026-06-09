@@ -1,0 +1,31 @@
+.dipl-grid-wrap{
+	display: flex;
+	flex-wrap: wrap;
+	margin-left: -4px;
+	margin-right: -4px;
+}
+.dipl-grid-wrap .dipl-column-item{
+	margin: 0 4px 8px;
+}
+.dipl-masonry-wrap .dipl-column-item{
+	display: inline-block;
+}
+.dipl-masonry-instagram-feed-gutter{
+	width: 4px;
+}
+.dipl_instagram_item-caption{
+	font-size: small;
+	line-height: 1.15rem;
+	color: #333;
+	word-wrap: break-word;
+	padding: 5px;
+}
+.dipl_instagram_feed_item .dipl_instagram_item-image,
+.dipl_instagram_feed_item .dipl_instagram_item-video{
+	display: block;
+}
+
+.dipl_instagram_feed_button_wrapper .et_pb_button_wrapper{
+    text-align: center;
+    margin-top: 20px;
+}

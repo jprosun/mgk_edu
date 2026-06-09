@@ -1,0 +1,772 @@
+.mgk-page-tutor-dashboard .mgk-main,
+.mgk-page-tutor-dashboard .content-area {
+    background: #f5f5f5;
+    overflow-x: hidden;
+}
+
+.mgk-page-tutor-dashboard .page-header,
+.mgk-page-tutor-dashboard .entry-header,
+.mgk-page-tutor-dashboard .entry-title {
+    display: none !important;
+}
+
+.mgk-page-tutor-dashboard .elementor-section-boxed > .elementor-container {
+    width: min(calc(100% - 20px), 920px) !important;
+    max-width: 920px !important;
+}
+
+.mgk-tutor-dash {
+    box-sizing: border-box;
+    width: min(100%, 920px);
+    margin: 0 auto;
+    padding: 8px;
+    color: #111;
+    font-family: "Courier New", Courier, monospace;
+}
+
+.mgk-tutor-dash * {
+    box-sizing: border-box;
+    letter-spacing: 0;
+    min-width: 0;
+}
+
+.mgk-tutor-dash__shell {
+    border: 2px solid #202020;
+    background: #fff;
+    overflow: hidden;
+}
+
+.mgk-tutor-dash-mobilebar,
+.mgk-tutor-dash-mobile-job-head,
+.mgk-tutor-dash-mobile-nav {
+    display: none;
+}
+
+.mgk-tutor-dash-welcome {
+    position: relative;
+    display: grid;
+    gap: 14px;
+    padding: 20px 18px;
+    border-bottom: 1px dashed #b8b8b8;
+}
+
+.mgk-tutor-dash-sec {
+    display: inline-flex;
+    width: max-content;
+    max-width: 100%;
+    align-items: center;
+    background: #202020;
+    color: #fff;
+    padding: 3px 8px;
+    font-size: 9px;
+    line-height: 1;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.mgk-tutor-dash-welcome .mgk-tutor-dash-sec,
+.mgk-tutor-dash-card .mgk-tutor-dash-sec {
+    position: absolute;
+    top: -1px;
+    right: -1px;
+}
+
+.mgk-tutor-dash h1,
+.mgk-tutor-dash h2 {
+    margin: 0;
+    color: #111;
+    font-weight: 900;
+    line-height: 1.15;
+}
+
+.mgk-tutor-dash h1 {
+    font-size: 22px;
+}
+
+.mgk-tutor-dash h2 {
+    font-size: 15px;
+}
+
+.mgk-tutor-dash p,
+.mgk-tutor-dash small,
+.mgk-tutor-dash em,
+.mgk-tutor-dash span {
+    overflow-wrap: anywhere;
+}
+
+.mgk-tutor-dash-welcome p,
+.mgk-tutor-dash-card p,
+.mgk-tutor-dash-card small,
+.mgk-tutor-dash-card em,
+.mgk-tutor-dash-card span {
+    color: #6f7a84;
+    font-size: 10px;
+    line-height: 1.45;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.mgk-tutor-dash-welcome p {
+    margin: 6px 0 0;
+}
+
+.mgk-tutor-dash-welcome nav,
+.mgk-tutor-dash-job div {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 10px;
+}
+
+.mgk-tutor-dash a {
+    display: inline-flex;
+    min-height: 42px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #111 !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    color: #111 !important;
+    padding: 0 14px;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    font-size: 10px;
+    line-height: 1.15;
+    font-weight: 900;
+    text-align: center;
+    white-space: normal;
+}
+
+.mgk-tutor-dash a.is-primary,
+.mgk-tutor-dash-welcome a.is-primary {
+    border-color: #df371f !important;
+    background: #df371f !important;
+    color: #fff !important;
+}
+
+.mgk-tutor-dash-earnings > a,
+.mgk-tutor-dash-payout div > a {
+    display: inline !important;
+    min-height: 0;
+    border: 0 !important;
+    background: transparent !important;
+    padding: 0;
+    color: inherit !important;
+}
+
+.mgk-tutor-dash-grid {
+    display: grid;
+    gap: 14px;
+    padding: 18px;
+}
+
+.mgk-tutor-dash-card {
+    position: relative;
+    min-height: 150px;
+    border: 1px solid #999;
+    background: #fff;
+    padding: 22px 18px 16px;
+}
+
+.mgk-tutor-dash-job {
+    order: 1;
+    border-color: #df371f;
+    background: #fff5f2;
+}
+
+.mgk-tutor-dash-job > b {
+    position: absolute;
+    top: 20px;
+    right: 18px;
+    background: #df371f;
+    color: #fff;
+    padding: 3px 9px;
+    font-size: 8px;
+    font-weight: 900;
+}
+
+.mgk-tutor-dash-job strong {
+    display: block;
+    margin-top: 8px;
+    color: #df371f;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.mgk-tutor-dash-job em {
+    display: block;
+    margin-top: 10px;
+    font-style: normal;
+}
+
+.mgk-tutor-dash-job small {
+    display: block;
+    margin-top: 14px;
+}
+
+.mgk-tutor-dash-today { order: 2; }
+.mgk-tutor-dash-week { order: 3; }
+.mgk-tutor-dash-logs { order: 4; }
+.mgk-tutor-dash-earnings { order: 5; }
+.mgk-tutor-dash-payout { order: 6; }
+.mgk-tutor-dash-leaderboard { order: 7; }
+.mgk-tutor-dash-ratings { order: 8; }
+.mgk-tutor-dash-messages { order: 9; }
+.mgk-tutor-dash-profile { order: 10; }
+.mgk-tutor-dash-quick { order: 11; }
+
+.mgk-tutor-dash-today > div,
+.mgk-tutor-dash-messages p,
+.mgk-tutor-dash-logs p {
+    display: grid;
+    gap: 3px;
+    margin: 0 0 10px;
+    border: 1px solid #aaa;
+    background: #fff;
+    padding: 9px;
+}
+
+.mgk-tutor-dash-today strong {
+    color: #111;
+    font-size: 11px;
+    font-weight: 900;
+}
+
+.mgk-tutor-dash-today a {
+    min-height: 0;
+    justify-content: flex-start;
+    border: 0 !important;
+    background: transparent !important;
+    color: #df371f !important;
+    padding: 0;
+}
+
+.mgk-tutor-dash-week > div {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 3px;
+}
+
+.mgk-tutor-dash-week > div span {
+    display: grid;
+    min-height: 48px;
+    place-items: center;
+    border: 1px solid #aaa;
+    background: #fff;
+    color: #111;
+}
+
+.mgk-tutor-dash-week span b {
+    display: block;
+    color: #111;
+    font-size: 8px;
+}
+
+.mgk-tutor-dash-week > div span.is-hot,
+.mgk-tutor-dash-logs p.is-hot,
+.mgk-tutor-dash-earnings {
+    border-color: #df371f;
+    background: #fde5e0;
+}
+
+.mgk-tutor-dash-week p {
+    margin: 8px 0 0;
+}
+
+.mgk-tutor-dash-logs p.is-hot {
+    color: #df371f;
+}
+
+.mgk-tutor-dash-earnings {
+    text-align: center;
+}
+
+.mgk-tutor-dash-earnings strong,
+.mgk-tutor-dash-ratings strong {
+    display: block;
+    color: #df371f;
+    font-size: 30px;
+    line-height: 1;
+    font-weight: 900;
+}
+
+.mgk-tutor-dash-earnings div {
+    margin: 18px 0 10px;
+    padding: 18px 10px;
+    background: repeating-linear-gradient(45deg, #f0f0f0 0 7px, #e4e4e4 7px 13px);
+    color: #6f7a84;
+    font-size: 10px;
+    font-weight: 900;
+}
+
+.mgk-tutor-dash-payout div {
+    background: #292929;
+    color: #fff;
+    padding: 16px;
+}
+
+.mgk-tutor-dash-payout div span,
+.mgk-tutor-dash-payout div em {
+    color: #fff;
+}
+
+.mgk-tutor-dash-payout div strong {
+    display: block;
+    color: #fff;
+    font-size: 20px;
+    font-weight: 900;
+}
+
+.mgk-tutor-dash-leaderboard p,
+.mgk-tutor-dash-messages p {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #e2e2e2;
+    margin: 0;
+    padding: 8px 0;
+}
+
+.mgk-tutor-dash-leaderboard p.is-you,
+.mgk-tutor-dash-leaderboard p.is-you span,
+.mgk-tutor-dash-leaderboard p.is-you b {
+    color: #df371f;
+}
+
+.mgk-tutor-dash-ratings {
+    text-align: center;
+}
+
+.mgk-tutor-dash-ratings blockquote {
+    margin: 12px 0 0;
+    border: 1px solid #aaa;
+    padding: 10px;
+    color: #6f7a84;
+    font-size: 10px;
+    line-height: 1.35;
+    font-weight: 900;
+}
+
+.mgk-tutor-dash-profile div {
+    height: 10px;
+    margin-top: 18px;
+    background: #e5e5e5;
+}
+
+.mgk-tutor-dash-profile div span {
+    display: block;
+    height: 100%;
+    background: #df371f;
+}
+
+.mgk-tutor-dash-quick {
+    display: grid;
+    gap: 8px;
+    background: #292929;
+}
+
+.mgk-tutor-dash-quick .mgk-tutor-dash-sec {
+    background: #555;
+}
+
+.mgk-tutor-dash-quick a {
+    width: 100%;
+}
+
+.mgk-tutor-dash-quick a:not(.is-primary) {
+    min-height: 36px;
+}
+
+@media (min-width: 720px) {
+    .mgk-tutor-dash-welcome {
+        grid-template-columns: 1fr auto;
+        align-items: start;
+    }
+
+    .mgk-tutor-dash-welcome nav {
+        min-width: 300px;
+    }
+
+    .mgk-tutor-dash-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .mgk-tutor-dash-card {
+        min-height: 195px;
+    }
+
+    .mgk-tutor-dash-job {
+        min-height: 268px;
+    }
+}
+
+@media (max-width: 719px) {
+    .mgk-page-tutor-dashboard {
+        max-width: 100vw;
+        overflow-x: hidden;
+    }
+
+    .mgk-page-tutor-dashboard .mgk-header,
+    .mgk-page-tutor-dashboard .mgk-site-header,
+    .mgk-page-tutor-dashboard .mgk-footer,
+    .mgk-page-tutor-dashboard .site-header,
+    .mgk-page-tutor-dashboard .site-footer {
+        display: none !important;
+    }
+
+    .mgk-page-tutor-dashboard .elementor-section-boxed > .elementor-container,
+    .mgk-page-tutor-dashboard .elementor-section,
+    .mgk-page-tutor-dashboard .elementor-container,
+    .mgk-page-tutor-dashboard .elementor-column,
+    .mgk-page-tutor-dashboard .elementor-widget,
+    .mgk-page-tutor-dashboard .elementor-widget-wrap,
+    .mgk-page-tutor-dashboard .elementor-widget-container {
+        width: 100% !important;
+        max-width: 100% !important;
+        overflow-x: hidden;
+    }
+
+    .mgk-page-tutor-dashboard .elementor-column-gap-default > .elementor-column > .elementor-element-populated {
+        padding: 0 !important;
+    }
+
+    .mgk-tutor-dash {
+        width: 100vw !important;
+        max-width: 100vw !important;
+        margin: 0 auto !important;
+        padding: 0;
+        overflow: hidden;
+    }
+
+    .mgk-tutor-dash__shell,
+    .mgk-tutor-dash-welcome,
+    .mgk-tutor-dash-grid {
+        width: 100%;
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .mgk-tutor-dash-card {
+        width: auto;
+        max-width: 100%;
+        overflow: hidden;
+    }
+
+    .mgk-tutor-dash p,
+    .mgk-tutor-dash small,
+    .mgk-tutor-dash em,
+    .mgk-tutor-dash span,
+    .mgk-tutor-dash a,
+    .mgk-tutor-dash strong {
+        max-width: 100%;
+        word-break: break-word;
+    }
+
+    .mgk-tutor-dash-card p,
+    .mgk-tutor-dash-card small,
+    .mgk-tutor-dash-card em {
+        max-width: calc(100vw - 72px);
+    }
+
+    .mgk-tutor-dash h1 {
+        font-size: 18px;
+    }
+
+    .mgk-tutor-dash__shell {
+        border-width: 1px;
+        border-left: 0;
+        border-right: 0;
+        padding-bottom: 34px;
+    }
+
+    .mgk-tutor-dash-mobilebar {
+        display: flex;
+        min-height: 28px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        background: #202020;
+        color: #fff;
+        padding: 0 10px;
+        font-size: 10px;
+        line-height: 1;
+        font-weight: 900;
+    }
+
+    .mgk-tutor-dash-mobilebar span {
+        color: #fff;
+        font-size: 9px;
+        white-space: nowrap;
+    }
+
+    .mgk-tutor-dash-welcome {
+        display: none;
+    }
+
+    .mgk-tutor-dash-welcome nav,
+    .mgk-tutor-dash-job div {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .mgk-tutor-dash-mobile-job-head {
+        display: flex;
+        min-height: 38px;
+        align-items: center;
+        justify-content: space-between;
+        gap: 8px;
+        padding: 0 14px;
+        border-bottom: 1px dashed #b8b8b8;
+        background: #fff;
+    }
+
+    .mgk-tutor-dash-mobile-job-head strong {
+        color: #111;
+        font-size: 11px;
+        line-height: 1.2;
+        font-weight: 900;
+    }
+
+    .mgk-tutor-dash-mobile-job-head .mgk-tutor-dash-sec {
+        display: inline-flex;
+        position: static;
+        margin: 0;
+        background: #df371f;
+    }
+
+    .mgk-tutor-dash-grid {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
+        padding: 12px 14px;
+    }
+
+    .mgk-tutor-dash-card {
+        flex: 0 0 100%;
+        min-height: 0;
+        padding: 14px 12px 12px;
+    }
+
+    .mgk-tutor-dash-job,
+    .mgk-tutor-dash-today,
+    .mgk-tutor-dash-week,
+    .mgk-tutor-dash-logs,
+    .mgk-tutor-dash-messages,
+    .mgk-tutor-dash-profile {
+        grid-column: 1 / -1;
+    }
+
+    .mgk-tutor-dash-job {
+        order: 1;
+        padding-top: 18px;
+    }
+
+    .mgk-tutor-dash-today { order: 2; }
+    .mgk-tutor-dash-logs { order: 3; }
+    .mgk-tutor-dash-earnings { order: 4; }
+    .mgk-tutor-dash-payout { order: 5; }
+    .mgk-tutor-dash-week { order: 6; }
+    .mgk-tutor-dash-ratings { order: 7; }
+    .mgk-tutor-dash-leaderboard { order: 8; }
+    .mgk-tutor-dash-messages { order: 9; }
+    .mgk-tutor-dash-profile { order: 10; }
+    .mgk-tutor-dash-quick { display: none; }
+
+    .mgk-tutor-dash-earnings,
+    .mgk-tutor-dash-payout,
+    .mgk-tutor-dash-leaderboard,
+    .mgk-tutor-dash-ratings {
+        flex: 0 0 calc(50% - 5px) !important;
+        width: calc(50% - 5px) !important;
+        max-width: calc(50% - 5px) !important;
+    }
+
+    .mgk-tutor-dash-job .mgk-tutor-dash-sec,
+    .mgk-tutor-dash-job > b {
+        display: none;
+    }
+
+    .mgk-tutor-dash-job h2 {
+        font-size: 12px;
+    }
+
+    .mgk-tutor-dash-job strong {
+        margin-top: 6px;
+        font-size: 10px;
+    }
+
+    .mgk-tutor-dash-job p {
+        margin: 4px 0 10px;
+        font-size: 9px;
+        line-height: 1.35;
+    }
+
+    .mgk-tutor-dash-job em,
+    .mgk-tutor-dash-job small {
+        margin-top: 8px;
+        font-size: 8px;
+        line-height: 1.35;
+    }
+
+    .mgk-tutor-dash a {
+        min-height: 34px;
+        padding: 0 6px;
+        font-size: 9px;
+    }
+
+    .mgk-tutor-dash-job div a {
+        min-width: 0;
+        font-size: 8px;
+    }
+
+    .mgk-tutor-dash-today > div,
+    .mgk-tutor-dash-messages p,
+    .mgk-tutor-dash-logs p {
+        margin-bottom: 6px;
+        padding: 8px;
+    }
+
+    .mgk-tutor-dash-week > div {
+        grid-template-columns: repeat(7, minmax(0, 1fr));
+    }
+
+    .mgk-tutor-dash-week > div span {
+        min-height: 34px;
+        font-size: 9px;
+    }
+
+    .mgk-tutor-dash-earnings,
+    .mgk-tutor-dash-payout,
+    .mgk-tutor-dash-leaderboard,
+    .mgk-tutor-dash-ratings {
+        min-height: 70px;
+        padding: 12px 8px 10px;
+        text-align: center;
+    }
+
+    .mgk-tutor-dash-earnings .mgk-tutor-dash-sec,
+    .mgk-tutor-dash-payout .mgk-tutor-dash-sec,
+    .mgk-tutor-dash-leaderboard .mgk-tutor-dash-sec,
+    .mgk-tutor-dash-ratings .mgk-tutor-dash-sec {
+        display: none;
+    }
+
+    .mgk-tutor-dash-earnings strong,
+    .mgk-tutor-dash-ratings strong,
+    .mgk-tutor-dash-payout div strong {
+        font-size: 18px;
+    }
+
+    .mgk-tutor-dash-earnings div,
+    .mgk-tutor-dash-earnings p,
+    .mgk-tutor-dash-payout p,
+    .mgk-tutor-dash-ratings blockquote,
+    .mgk-tutor-dash-leaderboard small {
+        display: none;
+    }
+
+    .mgk-tutor-dash-payout div {
+        background: transparent;
+        color: #111;
+        padding: 0;
+    }
+
+    .mgk-tutor-dash-payout div span,
+    .mgk-tutor-dash-payout div em,
+    .mgk-tutor-dash-payout div strong {
+        color: #111;
+    }
+
+    .mgk-tutor-dash-payout div span::before {
+        content: 'NEXT PAYOUT';
+    }
+
+    .mgk-tutor-dash-payout div span {
+        font-size: 0;
+    }
+
+    .mgk-tutor-dash-payout div span::before,
+    .mgk-tutor-dash-earnings::before,
+    .mgk-tutor-dash-ratings::before,
+    .mgk-tutor-dash-leaderboard::before {
+        display: block;
+        margin-bottom: 4px;
+        color: #6f7a84;
+        font-size: 8px;
+        font-weight: 900;
+        text-transform: uppercase;
+    }
+
+    .mgk-tutor-dash-earnings::before {
+        content: 'THIS MONTH';
+    }
+
+    .mgk-tutor-dash-ratings::before {
+        content: 'MY RATING';
+    }
+
+    .mgk-tutor-dash-leaderboard::before {
+        content: 'MY RANK';
+    }
+
+    .mgk-tutor-dash-leaderboard p {
+        display: none;
+    }
+
+    .mgk-tutor-dash-leaderboard p.is-you {
+        display: block;
+        border: 0;
+        padding: 0;
+        text-align: center;
+    }
+
+    .mgk-tutor-dash-leaderboard p.is-you span {
+        display: none;
+    }
+
+    .mgk-tutor-dash-leaderboard p.is-you b::before {
+        content: '#12';
+        color: #111;
+        font-size: 18px;
+    }
+
+    .mgk-tutor-dash-leaderboard p.is-you b {
+        font-size: 0;
+    }
+
+    .mgk-tutor-dash-leaderboard p.is-you::after {
+        content: 'OF 240 IN REGION';
+        display: block;
+        color: #6f7a84;
+        font-size: 8px;
+        font-weight: 900;
+    }
+
+    .mgk-tutor-dash-welcome .mgk-tutor-dash-sec,
+    .mgk-tutor-dash-card .mgk-tutor-dash-sec {
+        position: static;
+        margin-left: auto;
+        margin-bottom: 10px;
+        max-width: 100%;
+    }
+
+    .mgk-tutor-dash-mobile-nav {
+        position: fixed;
+        right: 0;
+        bottom: 0;
+        left: 0;
+        z-index: 20;
+        display: grid;
+        grid-template-columns: repeat(5, 1fr);
+        border-top: 1px solid #444;
+        background: #202020;
+        padding: 3px 2px;
+    }
+
+    .mgk-tutor-dash-mobile-nav a {
+        min-height: 24px;
+        border: 0 !important;
+        background: transparent !important;
+        color: #fff !important;
+        padding: 0;
+        font-size: 8px;
+    }
+}

@@ -1,0 +1,469 @@
+.mgk-page-tutor-earnings .mgk-main,
+.mgk-page-tutor-earnings .content-area {
+    background: #f5f5f5;
+    overflow-x: hidden;
+}
+
+.mgk-page-tutor-earnings .page-header,
+.mgk-page-tutor-earnings .entry-header,
+.mgk-page-tutor-earnings .entry-title {
+    display: none !important;
+}
+
+.mgk-page-tutor-earnings .mgk-site-header,
+.mgk-page-tutor-earnings .site-header,
+.mgk-page-tutor-earnings header.site-header,
+.mgk-page-tutor-earnings .mgk-footer,
+.mgk-page-tutor-earnings .site-footer,
+.mgk-page-tutor-earnings footer.site-footer {
+    display: none !important;
+}
+
+.mgk-page-tutor-earnings .elementor-section-boxed > .elementor-container {
+    width: min(calc(100% - 12px), 1880px) !important;
+    max-width: 1880px !important;
+}
+
+.mgk-tutor-earnings {
+    box-sizing: border-box;
+    width: min(100%, 1880px);
+    margin: 0 auto;
+    padding: 4px;
+    color: #111;
+    font-family: "Courier New", Courier, monospace;
+}
+
+.mgk-tutor-earnings *,
+.mgk-tutor-earnings *::before,
+.mgk-tutor-earnings *::after {
+    box-sizing: border-box;
+    letter-spacing: 0;
+    min-width: 0;
+}
+
+.mgk-tutor-earnings__shell {
+    border: 2px solid #202020;
+    background: #fff;
+}
+
+.mgk-tutor-earnings-topbar {
+    display: flex;
+    min-height: 34px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    border-bottom: 1px solid #b8b8b8;
+    padding: 0 14px;
+}
+
+.mgk-tutor-earnings-topbar strong,
+.mgk-tutor-earnings-topbar a {
+    color: #111 !important;
+    font-size: 10px;
+    line-height: 1;
+    font-weight: 900;
+    text-decoration: none !important;
+}
+
+.mgk-tutor-earnings-topbar nav {
+    display: flex;
+    gap: 14px;
+    align-items: center;
+}
+
+.mgk-tutor-earnings-topbar a.is-active,
+.mgk-tutor-earnings .is-hot,
+.mgk-tutor-earnings .is-hot-value {
+    color: #df371f !important;
+}
+
+.mgk-tutor-earnings h1,
+.mgk-tutor-earnings h2,
+.mgk-tutor-earnings h3,
+.mgk-tutor-earnings p {
+    margin: 0;
+}
+
+.mgk-tutor-earnings h1,
+.mgk-tutor-earnings h2,
+.mgk-tutor-earnings h3 {
+    color: #111;
+    font-weight: 900;
+    line-height: 1.15;
+}
+
+.mgk-tutor-earnings h1 { font-size: 18px; }
+.mgk-tutor-earnings h2 { font-size: 14px; }
+.mgk-tutor-earnings h3 { font-size: 12px; }
+
+.mgk-tutor-earnings-sec {
+    display: inline-flex;
+    width: max-content;
+    max-width: 100%;
+    align-items: center;
+    background: #202020;
+    color: #fff;
+    padding: 3px 8px;
+    font-size: 9px;
+    line-height: 1;
+    font-weight: 900;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.mgk-tutor-earnings-summary,
+.mgk-tutor-earnings-panel,
+.mgk-tutor-earnings-empty {
+    position: relative;
+    margin: 18px;
+}
+
+.mgk-tutor-earnings-summary .mgk-tutor-earnings-sec,
+.mgk-tutor-earnings-panel .mgk-tutor-earnings-sec {
+    position: absolute;
+    top: -1px;
+    right: -1px;
+}
+
+.mgk-tutor-earnings-summary {
+    border-bottom: 1px dashed #aaa;
+    padding-bottom: 16px;
+}
+
+.mgk-tutor-earnings-summary > header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+}
+
+.mgk-tutor-earnings-months {
+    display: flex;
+    gap: 6px;
+}
+
+.mgk-tutor-earnings-months a,
+.mgk-tutor-earnings-invoices header a,
+.mgk-tutor-earnings-commission button {
+    display: inline-flex;
+    min-height: 28px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #111 !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    color: #111 !important;
+    padding: 0 13px;
+    font-size: 9px;
+    font-weight: 900;
+    text-decoration: none !important;
+}
+
+.mgk-tutor-earnings-months a.is-active,
+.mgk-tutor-earnings-commission button.is-active {
+    border-color: #202020 !important;
+    background: #202020 !important;
+    color: #fff !important;
+}
+
+.mgk-tutor-earnings-kpis {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 10px;
+}
+
+.mgk-tutor-earnings-kpis article {
+    display: grid;
+    min-height: 62px;
+    place-items: center;
+    border: 1px solid #999;
+    background: #fff;
+    padding: 10px;
+}
+
+.mgk-tutor-earnings-kpis article.is-hot {
+    border-color: #df371f;
+    background: #fde5e0;
+}
+
+.mgk-tutor-earnings-kpis article.is-dark {
+    border-color: #202020;
+    background: #2b2b2b;
+    color: #fff;
+}
+
+.mgk-tutor-earnings-kpis span,
+.mgk-tutor-earnings small,
+.mgk-tutor-earnings-table b,
+.mgk-tutor-earnings-empty p {
+    color: #6f7a84;
+    font-size: 8px;
+    line-height: 1.35;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.mgk-tutor-earnings-kpis article.is-dark span,
+.mgk-tutor-earnings-kpis article.is-dark strong {
+    color: #fff;
+}
+
+.mgk-tutor-earnings-kpis strong {
+    color: #111;
+    font-size: 20px;
+    line-height: 1.1;
+    font-weight: 900;
+}
+
+.mgk-tutor-earnings-split {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin: 0 18px 16px;
+}
+
+.mgk-tutor-earnings-panel {
+    border: 1px solid #999;
+    background: #fff;
+    padding: 18px 14px 14px;
+}
+
+.mgk-tutor-earnings-split .mgk-tutor-earnings-panel {
+    margin: 0;
+}
+
+.mgk-tutor-earnings-commission header,
+.mgk-tutor-earnings-invoices header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 12px;
+}
+
+.mgk-tutor-earnings-commission header div {
+    display: flex;
+    gap: 4px;
+}
+
+.mgk-tutor-earnings-model-a {
+    border: 1px solid #df371f;
+    background: #fde5e0;
+    padding: 14px;
+}
+
+.mgk-tutor-earnings-model-b {
+    margin-top: 10px;
+    border: 1px solid #999;
+    background: #fff;
+    padding: 14px;
+}
+
+.mgk-tutor-earnings-model-a > span,
+.mgk-tutor-earnings-model-b > span {
+    display: block;
+    margin-bottom: 7px;
+    color: #df371f;
+    font-size: 8px;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.mgk-tutor-earnings-breakdown {
+    display: grid;
+    margin-top: 14px;
+}
+
+.mgk-tutor-earnings-breakdown p {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 12px;
+    border-top: 1px solid #b8b8b8;
+    padding: 8px 0;
+}
+
+.mgk-tutor-earnings-breakdown p.is-strong span,
+.mgk-tutor-earnings-breakdown p.is-strong b {
+    color: #111;
+    font-size: 12px;
+}
+
+.mgk-tutor-earnings-breakdown span,
+.mgk-tutor-earnings-breakdown b {
+    color: #6f7a84;
+    font-size: 9px;
+    line-height: 1.35;
+    font-weight: 900;
+}
+
+.mgk-tutor-earnings-slider {
+    display: grid;
+    grid-template-columns: auto 1fr auto auto;
+    gap: 8px;
+    align-items: center;
+    margin: 12px 0 7px;
+}
+
+.mgk-tutor-earnings-slider i {
+    position: relative;
+    display: block;
+    height: 8px;
+    background: #e3e3e3;
+}
+
+.mgk-tutor-earnings-slider i b {
+    position: absolute;
+    top: -5px;
+    left: 50%;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: #df371f;
+}
+
+.mgk-tutor-earnings-slider em,
+.mgk-tutor-earnings-slider strong {
+    color: #6f7a84;
+    font-size: 8px;
+    font-style: normal;
+    font-weight: 900;
+}
+
+.mgk-tutor-earnings-slider strong {
+    border: 1px solid #df371f;
+    color: #df371f;
+    padding: 4px;
+}
+
+.mgk-tutor-earnings-pending {
+    display: grid;
+    gap: 4px;
+    margin-top: 12px;
+    background: #2d2d2d;
+    color: #fff;
+    padding: 12px;
+}
+
+.mgk-tutor-earnings-pending span,
+.mgk-tutor-earnings-pending strong {
+    color: #fff;
+    font-size: 10px;
+    font-weight: 900;
+}
+
+.mgk-tutor-earnings-table {
+    display: grid;
+    margin-top: 10px;
+}
+
+.mgk-tutor-earnings-payout-table {
+    grid-template-columns: .55fr .55fr .55fr;
+}
+
+.mgk-tutor-earnings-ledger-table {
+    grid-template-columns: 1.25fr .55fr .55fr .75fr .65fr;
+}
+
+.mgk-tutor-earnings-table > * {
+    min-height: 24px;
+    border-bottom: 1px solid #d5d5d5;
+    padding: 7px 0;
+    color: #111;
+    font-size: 9px;
+    line-height: 1.25;
+    font-weight: 900;
+}
+
+.mgk-tutor-earnings-ledger p {
+    margin-top: 10px;
+    color: #6f7a84;
+    font-size: 8px;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.mgk-tutor-earnings-invoices > div {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 9px;
+    margin-top: 8px;
+}
+
+.mgk-tutor-earnings-invoices article {
+    display: grid;
+    min-height: 42px;
+    place-items: center;
+    border: 1px solid #999;
+    padding: 8px;
+}
+
+.mgk-tutor-earnings-invoices article span,
+.mgk-tutor-earnings-invoices article b {
+    color: #7b8790;
+    font-size: 8px;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.mgk-tutor-earnings-invoices article b {
+    color: #df371f;
+}
+
+.mgk-tutor-earnings-empty {
+    display: grid;
+    place-items: center;
+    gap: 8px;
+    border: 1px dashed #999;
+    padding: 18px;
+    text-align: center;
+}
+
+.mgk-tutor-earnings-empty strong {
+    font-size: 10px;
+    font-weight: 900;
+}
+
+@media (max-width: 900px) {
+    .mgk-page-tutor-earnings .elementor-section-boxed > .elementor-container {
+        width: 100% !important;
+        max-width: 100% !important;
+    }
+
+    .mgk-tutor-earnings {
+        padding: 8px;
+    }
+
+    .mgk-tutor-earnings-topbar,
+    .mgk-tutor-earnings-summary > header,
+    .mgk-tutor-earnings-commission header,
+    .mgk-tutor-earnings-invoices header {
+        align-items: flex-start;
+        flex-direction: column;
+    }
+
+    .mgk-tutor-earnings-kpis,
+    .mgk-tutor-earnings-split,
+    .mgk-tutor-earnings-invoices > div {
+        grid-template-columns: 1fr;
+    }
+
+    .mgk-tutor-earnings-summary,
+    .mgk-tutor-earnings-panel,
+    .mgk-tutor-earnings-empty,
+    .mgk-tutor-earnings-split {
+        margin: 12px;
+    }
+
+    .mgk-tutor-earnings-table {
+        overflow-x: auto;
+    }
+
+    .mgk-tutor-earnings-payout-table {
+        min-width: 520px;
+    }
+
+    .mgk-tutor-earnings-ledger-table {
+        min-width: 680px;
+    }
+}

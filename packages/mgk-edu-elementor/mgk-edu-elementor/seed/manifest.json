@@ -1,0 +1,21 @@
+{
+  "slug": "mgk-edu-elementor",
+  "category": "edu",
+  "permalink_structure": "/%postname%/",
+  "seed_files": [
+    "seed-mgk-edu-001.php",
+    "seed-teachers.php",
+    "seed-teacher-profiles.php",
+    "seed-teachers-batch2.php",
+    "seed-availability.php",
+    "seed-reviews.php",
+    "seed-ops-data.php",
+    "seed-layouts.php"
+  ],
+  "version": "v1.5",
+  "required_plugins": [
+    "elementor/elementor.php",
+    "advanced-custom-fields/acf.php",
+    "woocommerce/woocommerce.php"
+  ]
+}

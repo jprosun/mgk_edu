@@ -1,0 +1,59 @@
+# ============================================================
+# mgk_edu_elementor — .gitignore
+# Mục tiêu: KHÔNG up những gì tải/tái tạo đơn giản ở máy khác
+#   - WordPress core            -> Docker image / wp-cli tải lại được
+#   - DB binary (db/)           -> dựng lại từ db.sql qua ./restore-db.sh
+#   - Flatsome (đã loại bỏ)     -> không còn dùng
+#   - artefact build / runtime  -> cache, log, archive
+# GIỮ lại: toàn bộ plugins, theme mgk-edu-elementor + hello-elementor + Divi + twenty*,
+#          uploads, db.sql, packages/ (SOURCE), scripts, configs, docs
+# ============================================================
+
+# --- MySQL binary data: dựng lại từ db.sql ---
+/db/
+
+# --- WordPress CORE (tải lại được; chỉ giữ wp-content) ---
+/data/index.php
+/data/license.txt
+/data/readme.html
+/data/wp-activate.php
+/data/wp-blog-header.php
+/data/wp-comments-post.php
+/data/wp-config.php
+/data/wp-config-sample.php
+/data/wp-cron.php
+/data/wp-links-opml.php
+/data/wp-load.php
+/data/wp-login.php
+/data/wp-mail.php
+/data/wp-settings.php
+/data/wp-signup.php
+/data/wp-trackback.php
+/data/xmlrpc.php
+/data/wp-admin/
+/data/wp-includes/
+
+# --- wp-content: phần tái tạo được ---
+/data/wp-content/upgrade/
+/data/wp-content/uploads/cache/
+
+# Flatsome (theme cha + child) — đã chốt loại bỏ, không up
+/data/wp-content/themes/flatsome/
+/data/wp-content/themes/flatsome-child/
+
+# --- Build/đóng gói artefact ---
+/wp_source.tar
+/wp_db.tar
+packages/*/flatsome-child-*.zip
+packages/*/*.zip
+
+# --- Cache / log / tạm ---
+*.log
+data/wp-content/debug.log
+data/wp-content/cache/
+data/wp-content/w3tc-config/
+data/wp-content/uploads/w3tc-config/
+.DS_Store
+Thumbs.db
+*.swp
+*~

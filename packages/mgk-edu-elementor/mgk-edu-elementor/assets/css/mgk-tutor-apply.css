@@ -1,0 +1,677 @@
+.mgk-page-tutor-apply .mgk-main,
+.mgk-page-tutor-apply .content-area {
+    background: #f3f3f3;
+}
+
+.mgk-tutor-apply {
+    box-sizing: border-box;
+    width: min(100%, 1180px);
+    max-width: 100%;
+    margin: 0 auto;
+    padding: 8px;
+    color: #111;
+    font-family: "Courier New", Courier, monospace;
+    overflow: hidden;
+}
+
+.mgk-tutor-apply * {
+    box-sizing: border-box;
+    letter-spacing: 0;
+}
+
+.mgk-tutor-apply__shell {
+    border: 2px solid #202020;
+    background: #fff;
+    overflow: hidden;
+}
+
+.mgk-tutor-apply-topbar {
+    display: flex;
+    min-height: 30px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    border-bottom: 1px solid #b8b8b8;
+    background: #202020;
+    color: #fff;
+    padding: 0 10px;
+}
+
+.mgk-tutor-apply-topbar strong,
+.mgk-tutor-apply-topbar span {
+    font-size: 9px;
+    line-height: 1;
+    font-weight: 900;
+    text-transform: uppercase;
+    overflow-wrap: anywhere;
+}
+
+.mgk-tutor-apply-mobile-title {
+    position: relative;
+    display: flex;
+    min-height: 42px;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #cfcfcf;
+    padding: 0 10px;
+}
+
+.mgk-tutor-apply-mobile-title h1 {
+    margin: 0;
+    font-size: 13px;
+    line-height: 1;
+    font-weight: 900;
+}
+
+.mgk-tutor-apply-mobile-title span,
+.mgk-tutor-apply-sec {
+    display: inline-flex;
+    min-height: 18px;
+    align-items: center;
+    background: #292929;
+    color: #fff;
+    padding: 3px 8px;
+    font-size: 8px;
+    line-height: 1;
+    font-weight: 900;
+    white-space: nowrap;
+}
+
+.mgk-tutor-apply-steps {
+    position: relative;
+    display: flex;
+    overflow-x: auto;
+    gap: 5px;
+    padding: 8px 10px;
+    border-bottom: 1px dashed #bdbdbd;
+}
+
+.mgk-tutor-apply-steps > span {
+    display: none;
+}
+
+.mgk-tutor-apply-steps a {
+    flex: 0 0 auto;
+    min-width: 64px;
+    border: 1px solid #df371f;
+    background: #fff;
+    color: #df371f;
+    padding: 8px 10px;
+    text-align: center;
+    text-decoration: none;
+    font-size: 8px;
+    line-height: 1;
+    font-weight: 900;
+}
+
+.mgk-tutor-apply-steps a.is-active {
+    border-color: #292929;
+    background: #292929;
+    color: #fff;
+}
+
+.mgk-tutor-apply-layout {
+    display: block;
+    padding: 12px 10px 0;
+}
+
+.mgk-tutor-apply-main {
+    min-width: 0;
+}
+
+.mgk-tutor-apply-main section {
+    position: relative;
+    margin-bottom: 12px;
+}
+
+.mgk-tutor-apply-sec {
+    position: absolute;
+    top: -10px;
+    right: 0;
+    z-index: 2;
+}
+
+.mgk-tutor-apply h2 {
+    margin: 0 0 12px;
+    color: #111;
+    font-size: 18px;
+    line-height: 1.1;
+    font-weight: 900;
+}
+
+.mgk-tutor-apply h1,
+.mgk-tutor-apply h2,
+.mgk-tutor-apply p,
+.mgk-tutor-apply strong,
+.mgk-tutor-apply span,
+.mgk-tutor-apply a,
+.mgk-tutor-apply button,
+.mgk-tutor-apply article,
+.mgk-tutor-apply aside,
+.mgk-tutor-apply footer,
+.mgk-tutor-apply em,
+.mgk-tutor-apply b {
+    max-width: 100%;
+    overflow-wrap: anywhere;
+}
+
+.mgk-tutor-apply p,
+.mgk-tutor-apply-upload span,
+.mgk-tutor-apply-ocr article span,
+.mgk-tutor-apply-doc-upload span,
+.mgk-tutor-apply-other-docs,
+.mgk-tutor-apply-bank-warning,
+.mgk-tutor-apply-actions span,
+.mgk-tutor-apply-mobile-autosave,
+.mgk-tutor-apply-footer,
+.mgk-tutor-apply-preview p,
+.mgk-tutor-apply-preview small,
+.mgk-tutor-apply-preview footer {
+    color: #6f7a84;
+    font-size: 9px;
+    line-height: 1.5;
+    font-weight: 800;
+    text-transform: uppercase;
+}
+
+.mgk-tutor-apply-upload span,
+.mgk-tutor-apply-ocr p,
+.mgk-tutor-apply-doc-upload span,
+.mgk-tutor-apply-other-docs,
+.mgk-tutor-apply-bank-warning {
+    display: block;
+    white-space: normal;
+    word-break: break-word;
+    overflow-wrap: anywhere;
+}
+
+.mgk-tutor-apply-desktop-heading {
+    display: none;
+}
+
+.mgk-tutor-apply-upload {
+    border: 1px dashed #8e8e8e;
+    background: #fff;
+    padding: 18px 12px;
+    text-align: center;
+}
+
+.mgk-tutor-apply-upload strong {
+    display: block;
+    color: #71808a;
+    font-size: 10px;
+    line-height: 1.3;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.mgk-tutor-apply-upload-desktop {
+    display: none !important;
+}
+
+.mgk-tutor-apply-upload button,
+.mgk-tutor-apply-file-control span,
+.mgk-tutor-apply-actions a {
+    display: inline-flex;
+    min-height: 42px;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #111 !important;
+    border-radius: 0 !important;
+    background: #fff !important;
+    color: #111 !important;
+    padding: 0 18px;
+    box-shadow: none !important;
+    text-decoration: none !important;
+    font-family: "Courier New", Courier, monospace;
+    font-size: 10px;
+    line-height: 1;
+    font-weight: 900;
+}
+
+.mgk-tutor-apply-upload button {
+    width: 100%;
+    max-width: 100%;
+    margin-top: 10px;
+}
+
+.mgk-tutor-apply-file-control,
+.mgk-tutor-apply-doc-control {
+    display: block;
+    cursor: pointer;
+}
+
+.mgk-tutor-apply-file-control input,
+.mgk-tutor-apply-doc-control input {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.mgk-tutor-apply-file-control span {
+    width: 100%;
+    max-width: 100%;
+    margin-top: 10px;
+}
+
+.mgk-tutor-apply-file-status {
+    display: block;
+    margin-top: 10px;
+    color: #6f7a84;
+    font-size: 9px;
+    line-height: 1.45;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.mgk-tutor-apply-upload.is-uploaded,
+.mgk-tutor-apply-doc-upload.is-uploaded,
+.mgk-tutor-apply-doc-upload:has(.is-uploaded) {
+    border-color: #df371f;
+    background: #fde5e0;
+}
+
+.mgk-tutor-apply-ocr {
+    border: 1px solid #df371f;
+    background: #fde5e0;
+    padding: 14px 10px;
+}
+
+.mgk-tutor-apply-ocr > strong {
+    display: block;
+    margin-bottom: 10px;
+    color: #df371f;
+    font-size: 9px;
+    line-height: 1.3;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.mgk-tutor-apply-ocr-grid {
+    display: grid;
+    gap: 8px;
+}
+
+.mgk-tutor-apply-ocr article,
+.mgk-tutor-apply-doc-upload article {
+    border: 1px solid #aaa;
+    background: #fff;
+    padding: 10px;
+}
+
+.mgk-tutor-apply-ocr article b,
+.mgk-tutor-apply-doc-upload article b {
+    display: block;
+    color: #111;
+    font-size: 10px;
+    line-height: 1.25;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+.mgk-tutor-apply-ocr p {
+    margin: 10px 0 0;
+    background: #292929;
+    color: #fff;
+    padding: 10px;
+}
+
+.mgk-tutor-apply-docs {
+    border: 1px solid #aaa;
+    background: #fff;
+    padding: 14px 10px;
+}
+
+.mgk-tutor-apply-doc-upload {
+    display: grid;
+    gap: 8px;
+}
+
+.mgk-tutor-apply-doc-upload > div {
+    display: grid;
+    min-height: 72px;
+    place-items: center;
+    background: repeating-linear-gradient(45deg, #f0f0f0 0 7px, #e4e4e4 7px 13px);
+    color: #6f7a84;
+    font-size: 10px;
+    font-weight: 800;
+}
+
+.mgk-tutor-apply-doc-upload > div.is-uploaded {
+    min-height: 96px;
+    gap: 8px;
+    padding: 10px;
+    border: 1px solid #df371f;
+    background: #fff;
+}
+
+.mgk-tutor-apply-doc-upload > div.is-uploaded img {
+    max-width: 100%;
+    max-height: 74px;
+    object-fit: contain;
+}
+
+.mgk-tutor-apply-doc-upload > div.is-uploaded span {
+    color: #df371f;
+    font-size: 9px;
+    line-height: 1.35;
+    font-weight: 900;
+    text-align: center;
+    text-transform: uppercase;
+}
+
+.mgk-tutor-apply-doc-upload > strong,
+.mgk-tutor-apply-doc-control strong {
+    display: block;
+    border: 1px dashed #aaa;
+    background: #fff;
+    color: #6f7a84;
+    padding: 14px;
+    text-align: center;
+    font-size: 9px;
+    font-weight: 900;
+}
+
+.mgk-tutor-apply-doc-upload > span,
+.mgk-tutor-apply-other-docs,
+.mgk-tutor-apply-bank-warning {
+    display: block;
+    border: 1px solid #aaa;
+    background: #fff;
+    padding: 12px;
+}
+
+.mgk-tutor-apply-other-docs {
+    margin-top: 8px;
+}
+
+.mgk-tutor-apply-consent {
+    margin-bottom: 12px;
+    background: #292929;
+    color: #fff;
+    padding: 14px;
+    font-size: 10px;
+    line-height: 1.45;
+    font-weight: 900;
+}
+
+.mgk-tutor-apply-bank-warning {
+    margin-bottom: 12px;
+    border-color: #df371f;
+    color: #df371f;
+}
+
+.mgk-tutor-apply-actions {
+    display: grid;
+    grid-template-columns: 0.8fr 1.2fr;
+    gap: 8px;
+    align-items: center;
+    padding: 6px 0 12px;
+}
+
+.mgk-tutor-apply-actions .mgk-tutor-apply-primary {
+    border-color: #df371f !important;
+    background: #df371f !important;
+    color: #fff !important;
+}
+
+.mgk-tutor-apply-actions span {
+    display: none;
+}
+
+.mgk-tutor-apply-preview {
+    display: none;
+}
+
+.mgk-tutor-apply-mobile-autosave {
+    border-top: 1px dashed #bdbdbd;
+    padding: 8px 10px 12px;
+    text-align: center;
+}
+
+.mgk-tutor-apply-footer {
+    background: #202020;
+    color: #fff;
+    padding: 10px;
+    text-align: center;
+}
+
+.mgk-tutor-apply-step-card,
+.mgk-tutor-apply-placeholder {
+    border: 1px solid #aaa;
+    background: #fff;
+    padding: 18px 12px;
+}
+
+.mgk-tutor-apply-placeholder {
+    margin-top: 12px;
+    border-style: dashed;
+}
+
+.mgk-tutor-apply-placeholder span,
+.mgk-tutor-apply-placeholder em {
+    display: block;
+    color: #6f7a84;
+    font-size: 10px;
+    font-style: normal;
+    font-weight: 900;
+    text-transform: uppercase;
+}
+
+@media (max-width: 767px) {
+    .mgk-tutor-apply {
+        width: calc(100vw - 24px);
+        padding: 0;
+    }
+}
+
+@media (min-width: 768px) {
+    .mgk-tutor-apply {
+        padding: 14px;
+    }
+
+    .mgk-tutor-apply-topbar {
+        min-height: 44px;
+        padding: 0 28px;
+        background: #fff;
+        color: #111;
+    }
+
+    .mgk-tutor-apply-mobile-title {
+        display: none;
+    }
+
+    .mgk-tutor-apply-steps {
+        gap: 12px;
+        padding: 18px 28px;
+        overflow: visible;
+    }
+
+    .mgk-tutor-apply-steps > span {
+        position: absolute;
+        top: 4px;
+        right: 28px;
+        display: inline-flex;
+        min-height: 18px;
+        align-items: center;
+        background: #df371f;
+        color: #fff;
+        padding: 3px 10px;
+        font-size: 9px;
+        font-weight: 900;
+    }
+
+    .mgk-tutor-apply-steps a {
+        flex: 1 1 0;
+        min-height: 42px;
+        border-color: #999;
+        color: #111;
+        font-size: 10px;
+    }
+
+    .mgk-tutor-apply-layout {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) 300px;
+        gap: 28px;
+        padding: 38px 28px 0;
+    }
+
+    .mgk-tutor-apply-mobile-heading {
+        display: none;
+    }
+
+    .mgk-tutor-apply-desktop-heading {
+        display: block;
+    }
+
+    .mgk-tutor-apply h2 {
+        font-size: 26px;
+    }
+
+    .mgk-tutor-apply p,
+    .mgk-tutor-apply-upload span,
+    .mgk-tutor-apply-ocr article span,
+    .mgk-tutor-apply-doc-upload span,
+    .mgk-tutor-apply-other-docs,
+    .mgk-tutor-apply-bank-warning,
+    .mgk-tutor-apply-actions span,
+    .mgk-tutor-apply-mobile-autosave,
+    .mgk-tutor-apply-footer,
+    .mgk-tutor-apply-preview p,
+    .mgk-tutor-apply-preview small,
+    .mgk-tutor-apply-preview footer {
+        font-size: 11px;
+    }
+
+    .mgk-tutor-apply-upload {
+        padding: 34px 24px;
+    }
+
+    .mgk-tutor-apply-upload-desktop {
+        display: block !important;
+        color: #111 !important;
+        font-size: 16px !important;
+        text-transform: none !important;
+    }
+
+    .mgk-tutor-apply-upload-mobile {
+        display: none !important;
+    }
+
+    .mgk-tutor-apply-upload button {
+        width: 260px;
+        min-height: 54px;
+    }
+
+    .mgk-tutor-apply-ocr,
+    .mgk-tutor-apply-docs {
+        padding: 22px;
+    }
+
+    .mgk-tutor-apply-ocr-grid {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+
+    .mgk-tutor-apply-doc-upload {
+        grid-template-columns: 190px minmax(0, 1fr);
+    }
+
+    .mgk-tutor-apply-doc-upload > div {
+        grid-row: 1 / span 4;
+        min-height: 170px;
+    }
+
+    .mgk-tutor-apply-other-docs {
+        display: none;
+    }
+
+    .mgk-tutor-apply-actions {
+        grid-template-columns: 130px 230px auto;
+        padding: 16px 0 26px;
+    }
+
+    .mgk-tutor-apply-actions a {
+        min-height: 70px;
+    }
+
+    .mgk-tutor-apply-actions span {
+        display: block;
+    }
+
+    .mgk-tutor-apply-preview {
+        display: block;
+        align-self: start;
+        border: 1px solid #999;
+        background: #fff;
+        padding: 24px;
+    }
+
+    .mgk-tutor-apply-preview h2 {
+        margin: 0 0 20px;
+        font-size: 18px;
+    }
+
+    .mgk-tutor-apply-preview-card {
+        display: grid;
+        grid-template-columns: 72px minmax(0, 1fr);
+        gap: 12px;
+        align-items: center;
+        padding-bottom: 20px;
+        border-bottom: 1px solid #ddd;
+    }
+
+    .mgk-tutor-apply-preview-card div {
+        grid-row: 1 / span 3;
+        display: grid;
+        width: 72px;
+        aspect-ratio: 1;
+        place-items: center;
+        border-radius: 999px;
+        background: repeating-linear-gradient(45deg, #f0f0f0 0 7px, #e4e4e4 7px 13px);
+        color: #6f7a84;
+        font-size: 10px;
+    }
+
+    .mgk-tutor-apply-preview-card strong {
+        color: #111;
+        font-size: 16px;
+        font-weight: 900;
+    }
+
+    .mgk-tutor-apply-preview-card span,
+    .mgk-tutor-apply-preview-card em {
+        color: #df371f;
+        font-size: 10px;
+        font-style: normal;
+        font-weight: 900;
+        text-transform: uppercase;
+    }
+
+    .mgk-tutor-apply-progress {
+        height: 12px;
+        margin: 8px 0;
+        background: #e7e7e7;
+    }
+
+    .mgk-tutor-apply-progress span {
+        display: block;
+        width: 60%;
+        height: 100%;
+        background: #df371f;
+    }
+
+    .mgk-tutor-apply-preview footer {
+        margin-top: 18px;
+        background: #292929;
+        color: #fff;
+        padding: 12px;
+    }
+
+    .mgk-tutor-apply-mobile-autosave {
+        display: none;
+    }
+}

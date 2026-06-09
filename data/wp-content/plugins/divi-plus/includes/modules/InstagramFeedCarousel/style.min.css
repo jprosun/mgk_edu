@@ -1,0 +1,8 @@
+.dipl_instagram_feed_item .dipl_instagram_item-image,
+.dipl_instagram_feed_item .dipl_instagram_item-video{
+	display: block;
+}
+.dipl_instagram_feed_button_wrapper .et_pb_button_wrapper{
+	text-align: center;
+	margin-top: 20px;
+}

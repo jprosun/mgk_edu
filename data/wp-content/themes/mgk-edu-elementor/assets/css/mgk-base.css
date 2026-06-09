@@ -1,0 +1,46 @@
+html {
+    scroll-behavior: smooth;
+}
+
+body.mgk-edu {
+    background: var(--mgk-white);
+    color: var(--mgk-text);
+    font-family: var(--mgk-font);
+    letter-spacing: 0;
+}
+
+.mgk-edu *,
+.mgk-edu *::before,
+.mgk-edu *::after {
+    box-sizing: border-box;
+}
+
+.mgk-edu a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.mgk-edu button,
+.mgk-edu input,
+.mgk-edu select {
+    font: inherit;
+}
+
+.mgk-main {
+    min-height: 60vh;
+}
+
+.screen-reader-text,
+.skip-link {
+    position: absolute;
+    left: -9999px;
+}
+
+.skip-link:focus {
+    left: 16px;
+    top: 16px;
+    z-index: 1000;
+    background: var(--mgk-dark);
+    color: var(--mgk-white);
+    padding: 10px 12px;
+}

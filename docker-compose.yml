@@ -1,0 +1,43 @@
+services:
+  mgk-edu-el:
+    image: magicak-wordpress-wp-template:latest
+    container_name: mgk-edu-el
+    hostname: mgk-edu-el
+    environment:
+      - DATABASE_TYPE=local
+      - DEBUG=true
+      - PLAN_TYPE=free
+      - DATABASE_USERNAME=test
+      - DATABASE_NAME=magicaklocaldb
+      - DATABASE_PASSWORD=${DATABASE_PASSWORD:-changeme}
+      - WP_LOCAL_URL=http://localhost:8091
+    ports:
+      - "8091:80"
+    volumes:
+      - ./data:/var/www/html
+      - ./db:/var/data/mysql
+      - ./my-local-override.cnf:/etc/mysql/my.cnf:ro
+      - ./php-fpm-local-override.conf:/usr/local/etc/php-fpm.conf:ro
+      - ./wordpress_src/wp-config.php:/usr/src/wordpress/wp-config.php:ro
+    healthcheck:
+      test:
+        - "CMD-SHELL"
+        - |
+          mysql_status=$(mysql -u $$DATABASE_USERNAME -p$$DATABASE_PASSWORD -e "SELECT 1;" 2>/dev/null | wc -l)
+          if [ $$mysql_status -eq 0 ]; then exit 1; fi
+          redis_ping=$(redis-cli ping 2>/dev/null)
+          if [ "$$redis_ping" != "PONG" ]; then exit 1; fi
+          exit 0
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 3G
+        reservations:
+          cpus: '0.1'
+          memory: 500M
+    restart: unless-stopped

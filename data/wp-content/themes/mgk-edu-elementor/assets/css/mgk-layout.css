@@ -1,0 +1,80 @@
+.mgk-shell {
+    width: min(100% - 32px, var(--mgk-container));
+    margin: 0 auto;
+}
+
+.mgk-section {
+    padding: 48px 0;
+    border-bottom: 1px solid var(--mgk-border);
+}
+
+.mgk-section-sm {
+    padding: 24px 0;
+}
+
+.mgk-section-surface {
+    background: var(--mgk-bg);
+}
+
+.mgk-section-dark {
+    background: var(--mgk-dark);
+    color: var(--mgk-white);
+}
+
+.mgk-section-accent {
+    background: var(--mgk-accent);
+    color: var(--mgk-white);
+}
+
+.mgk-section-soft {
+    background: var(--mgk-accent-soft);
+}
+
+.mgk-section-head {
+    max-width: 720px;
+    margin-bottom: 24px;
+}
+
+.mgk-section-head.center {
+    margin-inline: auto;
+    text-align: center;
+}
+
+.mgk-section-head h1,
+.mgk-section-head h2 {
+    margin: 0;
+    font-size: clamp(28px, 4vw, 48px);
+    line-height: 1.08;
+    letter-spacing: 0;
+}
+
+.mgk-section-head h2 {
+    font-size: clamp(22px, 3vw, 34px);
+}
+
+.mgk-section-head p {
+    margin: 10px 0 0;
+    color: var(--mgk-muted);
+    line-height: 1.6;
+}
+
+.mgk-grid {
+    display: grid;
+    gap: 16px;
+}
+
+.mgk-grid-2 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.mgk-grid-3 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.mgk-grid-4 {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.mgk-grid-6 {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+}
