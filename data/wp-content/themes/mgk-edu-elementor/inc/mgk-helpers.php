@@ -11,7 +11,9 @@ function mgk_url( $path = '/' ) {
 
 function mgk_cta_url( $target = 'find-tutor', $args = [] ) {
     if ( $target === 'signin' ) {
-        $url = wp_login_url( mgk_url( '/parent/' ) );
+        // Passwordless: the header "Sign In" lands on our magic-link /login/,
+        // NOT wp-login.php (parents have no password).
+        $url = mgk_url( '/login/' );
         return $args ? add_query_arg( array_map( 'sanitize_text_field', $args ), $url ) : $url;
     }
 
@@ -1134,6 +1136,24 @@ function mgk_profile_tutor( $slug = '' ) {
 
         $pkg_rows     = $f( 'mgk_packages' ) ?: [];
         $packages     = array_map( fn( $r ) => [ $r['name'] ?? '', $r['price'] ?? '', $r['description'] ?? '', ! empty( $r['featured'] ) ], $pkg_rows );
+        // Prices come from the unified discount engine so the profile always shows
+        // the SAME figures the agency configures in wp-admin → Discounts (and what
+        // a package/trial actually charges). Empty ACF → full engine 3-tier set;
+        // otherwise recompute the price of any standard tier (trial / 8 / 16), keeping
+        // the admin's custom name + description for non-standard rows.
+        if ( function_exists( 'mgk_engine_packages_for_rate' ) ) {
+            if ( empty( $packages ) ) {
+                $packages = mgk_engine_packages_for_rate( $rate_num );
+            } else {
+                foreach ( $packages as $i => $pk ) {
+                    $tier = mgk_engine_detect_tier( $pk[0] );
+                    if ( $tier ) {
+                        $q = mgk_quote( [ 'item_type' => $tier, 'rate_num' => $rate_num, 'apply_loyalty' => false ] );
+                        $packages[ $i ][1] = $q['total_str'];
+                    }
+                }
+            }
+        }
 
         $faq_rows     = $f( 'mgk_faqs' ) ?: [];
         $faqs         = array_map( fn( $r ) => [ 'q' => $r['q'] ?? '', 'a' => $r['a'] ?? '' ], $faq_rows );

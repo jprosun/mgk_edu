@@ -62,11 +62,27 @@ function mgk_engine_hold_slot( array $req ) {
 	$now      = mgk_booking_now_utc();
 	$expires  = gmdate( 'Y-m-d H:i:s', time() + MGK_HOLD_SECONDS );
 
-	// Price is server-authoritative: never trust a client amount. If the caller
-	// didn't pass a positive price, compute the trial price from the tutor (the
-	// same offer S09/S11 display) so the booking's price matches what's charged.
-	$price = isset( $req['price_amount'] ) ? (float) $req['price_amount'] : 0;
-	if ( $price <= 0 ) {
+	// Price is server-authoritative via the unified quote engine (mgk_quote): the
+	// held price already includes the headline trial discount AND any loyalty /
+	// voucher discount this parent is eligible for, so the displayed total can
+	// never diverge from what Stripe charges. A client-supplied price is ignored
+	// for trials (recomputed) — the only trusted input is the voucher code.
+	$lesson_type = sanitize_text_field( $req['lesson_type'] ?? 'TRIAL' );
+	$price       = isset( $req['price_amount'] ) ? (float) $req['price_amount'] : 0;
+	$base_amount = 0.0;
+	$discount_json = null;
+	$voucher_code  = '';
+
+	if ( function_exists( 'mgk_quote_trial_for_tutor' ) && $lesson_type === 'TRIAL' ) {
+		$qctx = mgk_engine_quote_context( $req, $tutor_id );
+		$q    = mgk_quote_trial_for_tutor( $tutor_id, $qctx );
+		$price         = (float) $q['total'];
+		$base_amount   = (float) $q['base'];
+		$discount_json = wp_json_encode( $q['discounts_applied'] );
+		foreach ( (array) $q['discounts_applied'] as $d ) {
+			if ( strpos( (string) $d['key'], 'voucher:' ) === 0 ) $voucher_code = substr( $d['key'], 8 );
+		}
+	} elseif ( $price <= 0 ) {
 		$price = mgk_engine_trial_price_for_tutor( $tutor_id );
 	}
 
@@ -90,7 +106,14 @@ function mgk_engine_hold_slot( array $req ) {
 		'booking_code'        => $code,
 		'tutor_post_id'       => $tutor_id,
 		'lead_id'             => isset( $req['lead_id'] ) ? (int) $req['lead_id'] : null,
-		'parent_user_id'      => isset( $req['parent_user_id'] ) ? (int) $req['parent_user_id'] : ( get_current_user_id() ?: null ),
+		// Only attribute the booking to the session user when that user is a real
+		// PARENT booking for themselves. An admin/staff/editor browsing the site
+		// must NOT become the booking's parent — otherwise the confirm-time claim
+		// (mgk_parent_claim_on_booking) sees a pre-set parent_user_id and skips, so
+		// the real parent account + child are never created from the booking email.
+		'parent_user_id'      => isset( $req['parent_user_id'] )
+			? (int) $req['parent_user_id']
+			: ( ( function_exists( 'mgk_is_parent_user' ) && mgk_is_parent_user() ) ? ( get_current_user_id() ?: null ) : null ),
 		'student_name'        => isset( $req['student_name'] ) ? sanitize_text_field( $req['student_name'] ) : null,
 		'subject'             => isset( $req['subject'] ) ? sanitize_text_field( $req['subject'] ) : null,
 		'lesson_type'         => sanitize_text_field( $req['lesson_type'] ?? 'TRIAL' ),
@@ -101,6 +124,9 @@ function mgk_engine_hold_slot( array $req ) {
 		'status'              => 'HELD',
 		'payment_status'      => 'PENDING',
 		'price_amount'        => $price,
+			'base_amount'         => $base_amount,
+			'discount_applied'    => $discount_json,
+			'voucher_code'        => $voucher_code ?: null,
 		'currency'            => sanitize_text_field( $req['currency'] ?? 'SGD' ),
 		'idempotency_key'     => $idem ?: null,
 		'hold_expires_at_utc' => $expires,
@@ -299,6 +325,28 @@ function mgk_engine_find_by_idempotency( $key ) {
 		sanitize_text_field( $key )
 	), ARRAY_A );
 	return $row ?: null;
+}
+
+/**
+ * Build the loyalty/voucher context for a quote from a hold request: the parent
+ * (explicit user id, else the lead's email) and any voucher code. Read-only —
+ * used only to decide which discounts this customer is eligible for.
+ */
+function mgk_engine_quote_context( $req, $tutor_id ) {
+	$ctx = [
+		'parent_user_id' => isset( $req['parent_user_id'] ) ? (int) $req['parent_user_id'] : 0,
+		'parent_email'   => isset( $req['parent_email'] ) ? sanitize_email( $req['parent_email'] ) : '',
+		'child_id'       => isset( $req['child_id'] ) ? (int) $req['child_id'] : 0,
+		'voucher_code'   => isset( $req['voucher_code'] ) ? sanitize_text_field( $req['voucher_code'] ) : '',
+	];
+	if ( ! $ctx['parent_user_id'] && function_exists( 'mgk_is_parent_user' ) && mgk_is_parent_user() ) {
+		$ctx['parent_user_id'] = (int) get_current_user_id();
+	}
+	if ( $ctx['parent_email'] === '' && ! empty( $req['lead_id'] ) && function_exists( 'mgk_lead_contact' ) ) {
+		$c = mgk_lead_contact( (int) $req['lead_id'] );
+		if ( ! empty( $c['email'] ) ) $ctx['parent_email'] = sanitize_email( $c['email'] );
+	}
+	return $ctx;
 }
 
 /**

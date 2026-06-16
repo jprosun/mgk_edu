@@ -133,8 +133,8 @@ add_action( 'wp_enqueue_scripts', function () {
         true
     );
 
-    // Booking flow JS — loaded on request/proposal/slot-picker pages and WC checkout/order pages
-    $load_booking_js = is_page( [ 'request-tutor', 'tutor-proposals', 'proposals', 'book-slot', 'trial-pay', 'pay', 'trial-confirmed', 'confirmed' ] )
+    // Booking flow JS — loaded on request/proposal/slot-picker/package/payment pages.
+    $load_booking_js = is_page( [ 'request-tutor', 'tutor-proposals', 'proposals', 'book-slot', 'buy-package', 'trial-pay', 'pay', 'trial-confirmed', 'confirmed' ] )
         || ( function_exists( 'is_checkout' ) && is_checkout() )
         || ( function_exists( 'is_wc_endpoint_url' ) && is_wc_endpoint_url( 'order-received' ) );
 

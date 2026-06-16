@@ -25,6 +25,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 /** Field types and whether they are required (required ⇒ cannot be hidden). */
 function mgk_request_field_types() {
     return [
+        'child_name' => [ 'label' => 'Child Name',      'required' => true  ],
         'level'    => [ 'label' => 'Child Level',       'required' => true  ],
         'subject'  => [ 'label' => 'Subject',           'required' => true  ],
         'schedule' => [ 'label' => 'Preferred Schedule','required' => true  ],
@@ -80,6 +81,20 @@ function mgk_request_field_html( $type, $args = [] ) {
     echo '<div class="mgk-rq mgk-rq--field-only">';
 
     switch ( $type ) {
+
+        case 'child_name':
+            $label = isset( $a['label'] ) && $a['label'] !== '' ? $a['label'] : "1 · CHILD'S NAME";
+            $ph    = isset( $a['placeholder'] ) && $a['placeholder'] !== '' ? $a['placeholder'] : 'E.G. EMMA TAN';
+            ?>
+            <div class="mgk-rq-field" data-field="child_name">
+                <label class="mgk-rq-label" for="rq_child_name"><?php echo esc_html( $label ); ?> <?php echo $req; // phpcs:ignore ?></label>
+                <input type="text" id="rq_child_name" name="child_name" class="mgk-rq-input mgk-rq-child-name-input"
+                       autocomplete="off" maxlength="120" placeholder="<?php echo esc_attr( $ph ); ?>" required aria-required="true">
+                <?php if ( ! $hide_helper ) : ?><p class="mgk-rq-enum"><?php echo esc_html( isset( $a['helper'] ) && $a['helper'] !== '' ? $a['helper'] : 'First name is fine — used on your dashboard + lesson logs.' ); ?></p><?php endif; ?>
+                <p class="mgk-rq-err" data-err="child_name" aria-live="polite"></p>
+            </div>
+            <?php
+            break;
 
         case 'level':
             $label = isset( $a['label'] ) && $a['label'] !== '' ? $a['label'] : "1 · CHILD'S LEVEL";
@@ -216,12 +231,23 @@ function mgk_request_field_html( $type, $args = [] ) {
             $help  = isset( $a['helper'] ) && $a['helper'] !== ''
                 ? $a['helper']
                 : 'We’ll email you the tutor matches and a link to continue — no account needed.';
+            // Option 3: a signed-in parent is ADDING a child — don't re-ask the email.
+            // Prefill + lock to their account email; the new child links to them.
+            $signed_in = function_exists( 'mgk_is_parent_user' ) && mgk_is_parent_user();
+            $me        = $signed_in ? wp_get_current_user() : null;
+            $my_email  = $me ? $me->user_email : '';
+            $my_name   = $me ? ( get_user_meta( $me->ID, 'mgk_parent_full_name', true ) ?: $me->display_name ) : '';
             ?>
             <div class="mgk-rq-field" data-field="email">
                 <label class="mgk-rq-label" for="rq_email"><?php echo esc_html( $label ); ?> <?php echo $req; // phpcs:ignore ?></label>
                 <input type="email" id="rq_email" name="email" class="mgk-rq-input mgk-rq-email-input"
-                       autocomplete="email" placeholder="<?php echo esc_attr( $ph ); ?>" required aria-required="true">
-                <?php if ( ! $hide_helper ) : ?><div class="mgk-rq-phonehelp" role="note"><?php echo esc_html( $help ); ?></div><?php endif; ?>
+                       autocomplete="email" placeholder="<?php echo esc_attr( $ph ); ?>" required aria-required="true"
+                       value="<?php echo esc_attr( $my_email ); ?>"<?php echo $signed_in ? ' readonly' : ''; ?>>
+                <?php if ( $signed_in ) : ?>
+                    <div class="mgk-rq-phonehelp" role="note">Signed in as <strong><?php echo esc_html( $my_name ?: $my_email ); ?></strong> — this child will be added to your account.</div>
+                <?php elseif ( ! $hide_helper ) : ?>
+                    <div class="mgk-rq-phonehelp" role="note"><?php echo esc_html( $help ); ?></div>
+                <?php endif; ?>
                 <p class="mgk-rq-err" data-err="email" aria-live="polite"></p>
             </div>
             <?php

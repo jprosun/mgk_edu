@@ -221,7 +221,12 @@ function mgk_wa_on_request_match( $lead_id, $payload ) {
  */
 function mgk_wa_send_proposals_ready( $lead_id, $magic_link, $subject = '', $level = '', $count = 0 ) {
     $lead_id = (int) $lead_id;
-    $phone   = $lead_id ? (string) get_post_meta( $lead_id, 'mgk_lead_parent_phone', true ) : '';
+    // Use the canonical lead-contact key (mgk_lead_phone_e164). The old
+    // 'mgk_lead_parent_phone' key is never written by mgk_booking_create_lead,
+    // so this previously sent the proposals-ready WhatsApp to an empty number.
+    $phone   = ( $lead_id && function_exists( 'mgk_lead_contact' ) )
+        ? mgk_lead_contact( $lead_id )['phone']
+        : ( $lead_id ? (string) get_post_meta( $lead_id, 'mgk_lead_phone_e164', true ) : '' );
     $cfg     = mgk_wa_config();
 
     return mgk_wa_send(

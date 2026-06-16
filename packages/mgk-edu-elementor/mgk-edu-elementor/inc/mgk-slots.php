@@ -64,9 +64,10 @@ function mgk_get_week_slots( $tutor_id, $week_start ) {
     // Real engine availability, grouped by local (SGT) date.
     $engine_counts = mgk_slots_engine_week_counts( $tutor_id, $week_start );
 
-    // Demo fallback pattern only if the tutor has no engine availability at all.
+    // Demo fallback pattern only for non-tutor preview contexts. A real tutor with
+    // no availability shows an honest empty week (all days full) — never fake slots.
     $pattern = [ 0, 2, 2, 0, 1, 3, 2 ];
-    $use_demo = ( $engine_counts === null );
+    $use_demo = ( $engine_counts === null ) && ( get_post_type( $tutor_id ) !== 'mg_teacher' );
 
     $days = [];
     for ( $i = 0; $i < 7; $i++ ) {
@@ -161,7 +162,15 @@ function mgk_get_day_slots( $tutor_id, $day_iso = '', $day_abbrev = '' ) {
         }
     }
 
-    // ── Demo fallback (tutor has no availability configured) ──
+    // A real tutor with no configured availability has an honest empty schedule —
+    // never fake demo slots. Demo slots dead-end the flow (legacy id → no engine
+    // hold → no booking → "couldn't find this booking" at S12). Demo is only for
+    // non-tutor preview/layout contexts (Elementor editor, bare environment).
+    if ( get_post_type( (int) $tutor_id ) === 'mg_teacher' ) {
+        return [];
+    }
+
+    // ── Demo fallback (preview only — not a real tutor) ──
     if ( $tutor_id <= 0 ) $tutor_id = 1;
     $day_abbrev = $day_abbrev ?: 'wed';
 

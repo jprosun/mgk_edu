@@ -92,6 +92,39 @@ function mgk_get_confirm_payment_status( $context = [] ) {
     return in_array( $status, [ 'paid', 'pending', 'failed' ], true ) ? $status : 'paid';
 }
 
+/**
+ * The authoritative booking view for the current confirmation, or null when no
+ * real engine booking is bound (demo / preview). Resolved once per request.
+ * This is what lets every S12 field read REAL data from the persisted row
+ * instead of reconstructing it from the session-y S11 pay view.
+ */
+function mgk_confirm_booking_view( $context = [] ) {
+    static $cache = [];
+    $context = (array) ( $context ?: mgk_get_confirm_context() );
+    $row = $context['booking_row'] ?? null;
+    if ( ! is_array( $row ) || empty( $row['id'] ) || ! function_exists( 'mgk_booking_view' ) ) {
+        return null;
+    }
+    $id = (int) $row['id'];
+    if ( ! array_key_exists( $id, $cache ) ) {
+        $bv = mgk_booking_view( $row );
+        $cache[ $id ] = ( is_array( $bv ) && ! empty( $bv['found'] ) ) ? $bv : null;
+    }
+    return $cache[ $id ];
+}
+
+function mgk_confirm_package_lessons( $lesson_type ) {
+    $lesson_type = (string) $lesson_type;
+    if ( $lesson_type === 'PACKAGE_16' ) return 16;
+    if ( $lesson_type === 'PACKAGE_8' ) return 8;
+    return 0;
+}
+
+function mgk_confirm_package_label( $lesson_type ) {
+    $lessons = mgk_confirm_package_lessons( $lesson_type );
+    return $lessons ? sprintf( '%d-lesson package', $lessons ) : '';
+}
+
 /* ── Confirmation number + email (LOCKED) ────────────────── */
 
 /**
@@ -122,9 +155,22 @@ function mgk_get_booking_confirmation( $context = [] ) {
 
 /** Parent email for the confirmation line (masked per privacy). */
 function mgk_get_confirm_email( $context = [] ) {
+    $context = (array) ( $context ?: mgk_get_confirm_context() );
+
+    // Real booking → the parent's own email (wp_user / linked lead), masked.
+    $bv = mgk_confirm_booking_view( $context );
+    if ( $bv && ! empty( $bv['parent']['email'] ) ) {
+        $email = $bv['parent']['email'];
+        if ( function_exists( 'mgk_mask_email' ) ) {
+            $masked = mgk_mask_email( $email );
+            if ( $masked ) { $email = $masked; }
+        }
+        return $email;
+    }
+
+    // Demo/preview fallback: a passed ?email, else placeholder.
     $email = function_exists( 'mgk_get_query_filter' ) ? (string) mgk_get_query_filter( 'email', '' ) : '';
     if ( $email === '' ) { $email = 'your.email@example.sg'; }
-    // Show as-is when it is the demo placeholder; otherwise mask.
     if ( $email !== 'your.email@example.sg' && function_exists( 'mgk_mask_email' ) ) {
         $masked = mgk_mask_email( $email );
         if ( $masked ) { $email = $masked; }
@@ -143,6 +189,25 @@ function mgk_get_confirm_email( $context = [] ) {
  */
 function mgk_get_booking_summary( $context = [] ) {
     $context = (array) ( $context ?: mgk_get_confirm_context() );
+    $gst_inclusive = function_exists( 'mgk_discount_rule' ) ? ( (int) mgk_discount_rule( 'gst_inclusive', 1 ) === 1 ) : true;
+    $paid_tax_label = $gst_inclusive ? 'incl. GST' : 'plus GST';
+
+    // ── Real booking → authoritative row values (no session reconstruction) ──
+    $bv = mgk_confirm_booking_view( $context );
+    if ( $bv ) {
+        $package_label = mgk_confirm_package_label( $bv['lesson_type'] ?? '' );
+        return [
+            'title'         => $package_label ?: ( ucfirst( strtolower( $bv['lesson_type'] ) ) . ' lesson · ' . $bv['slot']['duration_h'] . 'h' ),
+            'duration_h'    => $package_label ? '' : $bv['slot']['duration_h'],
+            'tutor'         => $bv['tutor']['name'],
+            'subject_level' => $bv['subject_level'],
+            'datetime'      => $package_label ? 'Schedule after purchase' : $bv['slot']['datetime'],
+            'format'        => $package_label ? 'Scheduled lesson-by-lesson' : $bv['format'],
+            'paid'          => $bv['amount_str'] . ' ' . $paid_tax_label,
+            'method'        => $bv['method'] . ' · ' . $bv['code'],
+        ];
+    }
+
     $view    = function_exists( 'mgk_get_pay_view' ) ? mgk_get_pay_view() : [];
 
     $tutor    = (array) ( $view['tutor'] ?? [] );
@@ -174,7 +239,7 @@ function mgk_get_booking_summary( $context = [] ) {
         'subject_level' => $level . ' ' . $subject,
         'datetime'      => $datetime,
         'format'        => 'Online (Zoom)',
-        'paid'          => (string) ( $summary['total'] ?? '$33.00' ) . ' incl. GST',
+        'paid'          => (string) ( $summary['total'] ?? '$33.00' ) . ' ' . $paid_tax_label,
         'method'        => 'PayNow · Ref ' . $ref_tail,
     ];
 }
@@ -182,6 +247,24 @@ function mgk_get_booking_summary( $context = [] ) {
 /** Payment summary (kept separate per the spec helper list). */
 function mgk_get_payment_summary( $context = [] ) {
     $context = (array) ( $context ?: mgk_get_confirm_context() );
+    $gst_pct = function_exists( 'mgk_discount_rule' ) ? (int) mgk_discount_rule( 'gst_pct', MGK_GST_PCT ) : (int) MGK_GST_PCT;
+    $gst_inclusive = function_exists( 'mgk_discount_rule' ) ? ( (int) mgk_discount_rule( 'gst_inclusive', 1 ) === 1 ) : true;
+    $gst_note = $gst_inclusive
+        ? sprintf( 'INCL. %d%% GST (BR-04) · SGD', $gst_pct )
+        : sprintf( '+ %d%% GST (BR-04) · SGD', $gst_pct );
+
+    // ── Real booking → row amount/currency + actual payment method ──
+    $bv = mgk_confirm_booking_view( $context );
+    if ( $bv ) {
+        return [
+            'amount'   => $bv['amount_str'],
+            'method'   => $bv['method'],
+            'ref'      => $bv['code'],
+            'gst_note' => str_replace( 'SGD', $bv['currency'], $gst_note ),
+            'status'   => mgk_get_confirm_payment_status( $context ),
+        ];
+    }
+
     $view    = function_exists( 'mgk_get_pay_view' ) ? mgk_get_pay_view() : [];
     $summary = (array) ( $view['summary'] ?? [] );
     $ref     = (string) ( $context['ref'] ?? ( $view['reference'] ?? '' ) );
@@ -213,19 +296,31 @@ function mgk_is_tutor_contact_unlocked( $context = [] ) {
  */
 function mgk_get_tutor_contact_for_booking( $context = [] ) {
     $context  = (array) ( $context ?: mgk_get_confirm_context() );
-    $view     = function_exists( 'mgk_get_pay_view' ) ? mgk_get_pay_view() : [];
-    $tutor    = (array) ( $view['tutor'] ?? [] );
     $unlocked = mgk_is_tutor_contact_unlocked( $context );
 
-    $name  = (string) ( $tutor['name'] ?? 'Ms Lee Yi Ling' );
-    $slug  = sanitize_title( $tutor['slug'] ?? $name );
+    // ── Real booking → tutor name + contact from the mg_teacher record ──
+    $bv = mgk_confirm_booking_view( $context );
+    if ( $bv ) {
+        $name   = $bv['tutor']['name'];
+        $slug   = $bv['tutor']['slug'];
+        $avatar = $bv['tutor']['photo'];
+        // Real contact from tutor meta; demo-safe placeholder if not configured.
+        $phone  = $bv['tutor']['phone'] ?: '+65 9XXX 1234';
+        $email  = $bv['tutor']['email'] ?: ( $slug ? str_replace( '-', '_', $slug ) . '@tutors.example.sg' : 'tutor@tutors.example.sg' );
+    } else {
+        $view   = function_exists( 'mgk_get_pay_view' ) ? mgk_get_pay_view() : [];
+        $tutor  = (array) ( $view['tutor'] ?? [] );
+        $name   = (string) ( $tutor['name'] ?? 'Ms Lee Yi Ling' );
+        $slug   = sanitize_title( $tutor['slug'] ?? $name );
+        $avatar = (string) ( $tutor['photo'] ?? '' );
+        $phone  = '+65 9XXX 1234';
+        $email  = $slug ? str_replace( '-', '_', $slug ) . '@tutors.example.sg' : 'tutor@tutors.example.sg';
+    }
+
     $short = $name;
     if ( preg_match( '/\b(Ms|Mr|Mrs|Dr)\.?\s+([A-Z][a-z]+)/', $name, $m ) ) { $short = $m[1] . ' ' . $m[2]; }
 
-    // Demo-safe contact (real value would come from tutor CPT meta).
-    $phone = '+65 9XXX 1234';
-    $email = $slug ? str_replace( '-', '_', $slug ) . '@tutors.example.sg' : 'tutor@tutors.example.sg';
-
+    // NFR-10 gate: contact is masked until the booking is paid.
     if ( ! $unlocked ) {
         $phone = '+65 ••••  ••••';
         $email = '••••••@tutors.example.sg';
@@ -236,7 +331,7 @@ function mgk_get_tutor_contact_for_booking( $context = [] ) {
         'short'    => $short,
         'phone'    => $phone,
         'email'    => $email,
-        'avatar'   => (string) ( $tutor['photo'] ?? '' ),
+        'avatar'   => $avatar,
         'unlocked' => $unlocked,
     ];
 }
@@ -252,9 +347,11 @@ function mgk_get_booking_message_thread_url( $context = [] ) {
 
 /* ── First lesson + calendar (LOCKED) ────────────────────── */
 
-/** Zoom link for the booking (demo derived from the reference). */
+/** Zoom link for the booking. Real booking → derived from booking_view (stable). */
 function mgk_get_lesson_zoom_url( $context = [] ) {
     $context = (array) ( $context ?: mgk_get_confirm_context() );
+    $bv      = mgk_confirm_booking_view( $context );
+    if ( $bv && ! empty( $bv['zoom'] ) ) { return $bv['zoom']; }
     $ref     = (string) ( $context['ref'] ?? '' );
     $tail    = preg_match( '/([0-9]{3,})$/', $ref, $m ) ? $m[1] : '8842';
     return 'https://zoom.us/j/' . $tail . 'XXXX';
@@ -262,6 +359,17 @@ function mgk_get_lesson_zoom_url( $context = [] ) {
 
 /** First-lesson readiness items (SAFE copy lives in the partial; data here). */
 function mgk_get_first_lesson_items( $context = [] ) {
+    $context = (array) ( $context ?: mgk_get_confirm_context() );
+    $bv      = mgk_confirm_booking_view( $context );
+    $package_label = $bv ? mgk_confirm_package_label( $bv['lesson_type'] ?? '' ) : '';
+    if ( $package_label ) {
+        return [
+            [ 'icon' => '✓', 'text' => ucfirst( $package_label ) . ' credits added to your child account', 'url' => '' ],
+            [ 'icon' => '→', 'text' => 'Schedule each lesson from My Bookings when you are ready', 'url' => '' ],
+            [ 'icon' => '✉', 'text' => 'Message your tutor to agree recurring timings or lesson goals', 'url' => '' ],
+        ];
+    }
+
     $zoom = mgk_get_lesson_zoom_url( $context );
     return [
         [ 'icon' => '🔗', 'text' => 'Zoom link: ' . $zoom . ' (also emailed)', 'url' => $zoom ],
@@ -278,6 +386,7 @@ function mgk_get_calendar_ics_url( $context = [] ) {
     $context = (array) ( $context ?: mgk_get_confirm_context() );
     return add_query_arg( array_filter( [
         'mgk_action' => 'ics',
+        'booking'    => mgk_confirm_booking_param( $context ),
         'lead'       => $context['lead_token'] ?? '',
         'tutor'      => $context['tutor_slug'] ?? '',
         'slot'       => $context['slot_id'] ?? '',
@@ -285,13 +394,31 @@ function mgk_get_calendar_ics_url( $context = [] ) {
     ] ), home_url( '/trial-confirmed/' ) );
 }
 
+/** The booking identifier (code preferred) to round-trip on endpoint URLs. */
+function mgk_confirm_booking_param( $context = [] ) {
+    $context = (array) ( $context ?: mgk_get_confirm_context() );
+    $row = $context['booking_row'] ?? null;
+    if ( is_array( $row ) && ! empty( $row['booking_code'] ) ) return (string) $row['booking_code'];
+    return ! empty( $context['booking_id'] ) ? (string) $context['booking_id'] : '';
+}
+
 /** Calendar event payload (title / start / end / details) — locked from booking. */
 function mgk_get_calendar_event( $context = [] ) {
+    $context = (array) ( $context ?: mgk_get_confirm_context() );
     $summary = mgk_get_booking_summary( $context );
     $zoom    = mgk_get_lesson_zoom_url( $context );
-    // Demo fixed start; a real booking would compute from the slot timestamp.
-    $start = gmdate( 'Ymd\THis\Z', strtotime( '2026-01-24 08:00:00 UTC' ) ); // 4:00pm SGT
-    $end   = gmdate( 'Ymd\THis\Z', strtotime( '2026-01-24 09:30:00 UTC' ) ); // 5:30pm SGT
+
+    // Real booking → exact start/end from the persisted slot (UTC).
+    $bv = mgk_confirm_booking_view( $context );
+    if ( $bv && ! empty( $bv['slot']['start_utc'] ) && ! empty( $bv['slot']['end_utc'] ) ) {
+        $start = gmdate( 'Ymd\THis\Z', strtotime( $bv['slot']['start_utc'] . ' UTC' ) );
+        $end   = gmdate( 'Ymd\THis\Z', strtotime( $bv['slot']['end_utc'] . ' UTC' ) );
+    } else {
+        // Demo fixed start.
+        $start = gmdate( 'Ymd\THis\Z', strtotime( '2026-01-24 08:00:00 UTC' ) ); // 4:00pm SGT
+        $end   = gmdate( 'Ymd\THis\Z', strtotime( '2026-01-24 09:30:00 UTC' ) ); // 5:30pm SGT
+    }
+
     return [
         'title'   => 'Trial lesson with ' . $summary['tutor'],
         'details' => $summary['subject_level'] . ' · ' . $summary['format'] . "\nZoom: " . $zoom,
@@ -320,8 +447,8 @@ function mgk_get_outlook_calendar_url( $context = [] ) {
         'subject'  => $e['title'],
         'body'     => $e['details'],
         'location' => $e['location'],
-        'startdt'  => gmdate( 'c', strtotime( '2026-01-24 08:00:00 UTC' ) ),
-        'enddt'    => gmdate( 'c', strtotime( '2026-01-24 09:30:00 UTC' ) ),
+        'startdt'  => gmdate( 'c', strtotime( $e['start'] ) ),
+        'enddt'    => gmdate( 'c', strtotime( $e['end'] ) ),
     ] ), 'https://outlook.live.com/calendar/0/deeplink/compose' );
 }
 
@@ -342,6 +469,20 @@ function mgk_get_next_steps( $context = [] ) {
  */
 function mgk_get_invoice_for_booking( $context = [] ) {
     $context = (array) ( $context ?: mgk_get_confirm_context() );
+
+    // Real booking → invoice id from the booking code (stable, unique).
+    $bv = mgk_confirm_booking_view( $context );
+    if ( $bv ) {
+        $id    = 'INV-' . $bv['code'];
+        $ready = $bv['is_paid'];
+        return [
+            'id'    => $id,
+            'label' => 'E-Invoice ' . $id . ' (incl. GST)',
+            'ready' => $ready,
+            'url'   => $ready ? mgk_get_invoice_download_url( $id, $context ) : '',
+        ];
+    }
+
     $ref     = (string) ( $context['ref'] ?? '' );
     $tail    = preg_match( '/([0-9]{3,})$/', $ref, $m ) ? $m[1] : '8842';
     $id      = 'INV-' . $tail;
@@ -358,6 +499,7 @@ function mgk_get_invoice_download_url( $invoice_id, $context = [] ) {
     $context = (array) ( $context ?: mgk_get_confirm_context() );
     return add_query_arg( array_filter( [
         'mgk_action' => 'invoice',
+        'booking'    => mgk_confirm_booking_param( $context ),
         'inv'        => sanitize_text_field( (string) $invoice_id ),
         'ref'        => $context['ref'] ?? '',
     ] ), home_url( '/trial-confirmed/' ) );
@@ -390,8 +532,13 @@ function mgk_get_refund_preview( $context = [] ) {
     $amount_num = (float) preg_replace( '/[^0-9.]/', '', $amount );
     $half    = '$' . number_format( $amount_num * 0.5, 2 );
 
-    // Demo entitlement: >48h out → full refund (the happy default).
+    // Hours until the lesson: real booking → from the slot; demo → >48h default.
     $hours_out = 50;
+    $bv = mgk_confirm_booking_view( $context );
+    if ( $bv && ! empty( $bv['slot']['start_utc'] ) ) {
+        $secs = strtotime( $bv['slot']['start_utc'] . ' UTC' ) - time();
+        $hours_out = max( 0, (int) floor( $secs / 3600 ) );
+    }
     $entitled  = $hours_out >= MGK_REFUND_FULL_HOURS ? 'full'
         : ( $hours_out >= MGK_REFUND_HALF_HOURS ? 'half' : 'none' );
 
@@ -403,11 +550,16 @@ function mgk_get_refund_preview( $context = [] ) {
 
     $entitled_amount = $entitled === 'full' ? $amount : ( $entitled === 'half' ? $half : '$0.00' );
 
+    $tier_phrase = $entitled === 'full' ? sprintf( '≥%dh before your lesson', MGK_REFUND_FULL_HOURS )
+        : ( $entitled === 'half' ? sprintf( '%d–%dh before your lesson', MGK_REFUND_HALF_HOURS, MGK_REFUND_FULL_HOURS )
+            : sprintf( '<%dh before your lesson', MGK_REFUND_HALF_HOURS ) );
+
     return [
         'tiers'           => $tiers,
         'entitled'        => $entitled,
         'entitled_amount' => $entitled_amount,
-        'note'            => sprintf( 'You’re >%dh out → you’ll be refunded %s (%s). Shown before you confirm.', MGK_REFUND_FULL_HOURS, $entitled_amount, $entitled ),
+        'hours_out'       => $hours_out,
+        'note'            => sprintf( 'You’re %s → you’ll be refunded %s (%s). Shown before you confirm.', $tier_phrase, $entitled_amount, $entitled ),
     ];
 }
 
@@ -438,14 +590,26 @@ function mgk_get_confirmation_view() {
     $context = mgk_get_confirm_context();
     $status  = mgk_get_confirm_payment_status( $context );
 
-    // Booking resolution: reuse the S11 pay view's tutor/slot gate.
-    $pay = function_exists( 'mgk_get_pay_view' ) ? mgk_get_pay_view() : [ 'status' => 'not_found' ];
-    if ( ( $pay['status'] ?? '' ) !== 'ok' ) {
-        return [ 'status' => 'not_found', 'context' => $context ];
+    // ── Real engine booking → render straight from the persisted row. ──
+    // A CONFIRMED booking makes the S11 pay view return 'confirmed' (not 'ok'),
+    // so we must NOT gate S12 on it — the booking row is the source of truth.
+    $bv = mgk_confirm_booking_view( $context );
+    if ( ! $bv ) {
+        $preview = isset( $_GET['mgk_preview'] ) || isset( $_GET['preview'] );
+        if ( ! $preview ) {
+            return [ 'status' => 'not_found', 'context' => $context ];
+        }
+        // Explicit demo/preview only: require the session pay view to resolve a tutor/slot.
+        $pay = function_exists( 'mgk_get_pay_view' ) ? mgk_get_pay_view() : [ 'status' => 'not_found' ];
+        if ( ( $pay['status'] ?? '' ) !== 'ok' ) {
+            return [ 'status' => 'not_found', 'context' => $context ];
+        }
     }
+    $is_package = $bv && mgk_confirm_package_lessons( $bv['lesson_type'] ?? '' );
 
     return [
         'status'       => $status, // paid | pending | failed
+        'is_package'   => (bool) $is_package,
         'context'      => $context,
         'confirmation' => mgk_get_booking_confirmation( $context ),
         'email'        => mgk_get_confirm_email( $context ),
@@ -453,7 +617,13 @@ function mgk_get_confirmation_view() {
         'payment'      => mgk_get_payment_summary( $context ),
         'contact'      => mgk_get_tutor_contact_for_booking( $context ),
         'lesson'       => mgk_get_first_lesson_items( $context ),
-        'calendar'     => [
+        'calendar'     => $is_package ? [
+            'enabled' => false,
+            'ics'     => '',
+            'google'  => '',
+            'outlook' => '',
+        ] : [
+            'enabled' => true,
             'ics'     => mgk_get_calendar_ics_url( $context ),
             'google'  => mgk_get_google_calendar_url( $context ),
             'outlook' => mgk_get_outlook_calendar_url( $context ),
@@ -574,6 +744,162 @@ add_action( 'template_redirect', function () {
     header( 'Content-Type: text/calendar; charset=utf-8' );
     header( 'Content-Disposition: attachment; filename="trial-lesson.ics"' );
     echo $ics; // phpcs:ignore WordPress.Security.EscapeOutput
+    exit;
+} );
+
+/* ── E-invoice (printable HTML; PDF via the browser's print-to-PDF) ─────────
+ * Serves a clean, IRAS-style tax invoice for the booking at ?mgk_action=invoice.
+ * Printable now; a server-side PDF (dompdf/mPDF) is a later integrations step. */
+function mgk_render_invoice_html( $context = [] ) {
+    $context = (array) ( $context ?: mgk_get_confirm_context() );
+    $inv     = mgk_get_invoice_for_booking( $context );
+    $summary = mgk_get_booking_summary( $context );
+    $pay     = mgk_get_payment_summary( $context );
+    $payee   = function_exists( 'mgk_get_payee_details' ) ? mgk_get_payee_details() : [ 'payee' => get_bloginfo( 'name' ), 'uen' => '' ];
+
+    $amount      = $pay['amount'];
+    $amount_num  = (float) preg_replace( '/[^0-9.]/', '', $amount );
+    $gst_pct     = function_exists( 'mgk_discount_rule' ) ? (float) mgk_discount_rule( 'gst_pct', MGK_GST_PCT ) : ( defined( 'MGK_GST_PCT' ) ? (float) MGK_GST_PCT : 9.0 );
+    $gst_inclusive = function_exists( 'mgk_discount_rule' ) ? ( (int) mgk_discount_rule( 'gst_inclusive', 1 ) === 1 ) : true;
+    // Back out the GST component from the final charged total. This works for both
+    // inclusive and exclusive modes because the booking amount is already the amount
+    // paid/charged; the copy below tells the parent how that tax was applied.
+    $net         = $amount_num / ( 1 + $gst_pct / 100 );
+    $gst         = $amount_num - $net;
+    $money       = function ( $n ) { return '$' . number_format( (float) $n, 2 ); };
+    $tax_footer  = $gst_inclusive
+        ? 'Prices are GST-inclusive (BR-04).'
+        : 'GST is added on top of the net lesson amount.';
+
+    // Itemised discount breakdown (SRS: discounts recorded on the e-invoice). Read
+    // the frozen booking row so the invoice shows EXACTLY what was charged: the
+    // gross lesson price + each discount applied. Falls back to a single net line
+    // for demo/legacy bookings with no stored breakdown.
+    $brow        = $context['booking_row'] ?? null;
+    $base_gross  = ( is_array( $brow ) && (float) ( $brow['base_amount'] ?? 0 ) > 0 ) ? (float) $brow['base_amount'] : null;
+    $inv_discounts = [];
+    if ( is_array( $brow ) && ! empty( $brow['discount_applied'] ) ) {
+        $decoded = json_decode( (string) $brow['discount_applied'], true );
+        if ( is_array( $decoded ) ) {
+            foreach ( $decoded as $d ) {
+                $lbl = (string) ( $d['label'] ?? 'Discount' );
+                $pct = (int) ( $d['pct'] ?? 0 );
+                $has_pct = $pct && strpos( $lbl, '(' . $pct . '%' ) !== false;
+                $inv_discounts[] = [
+                    'label'  => ( $pct && ! $has_pct ) ? sprintf( '%s (%d%%)', $lbl, $pct ) : $lbl,
+                    'amount' => (float) ( $d['amount'] ?? 0 ),
+                ];
+            }
+        }
+    }
+    $itemised = ( $base_gross !== null && $inv_discounts );
+
+    $bv      = mgk_confirm_booking_view( $context );
+    $issued  = $bv ? gmdate( 'j M Y' ) : gmdate( 'j M Y' );
+    $bill_to = $bv && ! empty( $bv['parent']['name'] ) ? $bv['parent']['name'] : 'Parent / Guardian';
+    $bill_em = mgk_get_confirm_email( $context );
+
+    ob_start(); ?>
+<!doctype html><html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title><?php echo esc_html( $inv['id'] ); ?> · Tax Invoice</title>
+<style>
+  *{box-sizing:border-box} body{font:14px/1.6 -apple-system,Segoe UI,Roboto,Arial,sans-serif;color:#1a1a1a;margin:0;padding:40px;background:#f6f7f9}
+  .inv{max-width:720px;margin:0 auto;background:#fff;border:1px solid #e3e5e8;border-radius:12px;padding:40px}
+  .row{display:flex;justify-content:space-between;align-items:flex-start;gap:24px}
+  h1{font-size:22px;margin:0 0 2px} .muted{color:#646970} .small{font-size:12px}
+  table{width:100%;border-collapse:collapse;margin:24px 0}
+  th,td{text-align:left;padding:10px 8px;border-bottom:1px solid #eceef0} td.r,th.r{text-align:right}
+  .totals{margin-left:auto;width:280px} .totals .grand{font-weight:700;font-size:16px;border-top:2px solid #1a1a1a}
+  .paid{display:inline-block;border:1.5px solid #1a7f37;color:#1a7f37;border-radius:6px;padding:2px 10px;font-weight:700;font-size:12px;letter-spacing:.04em}
+  .btn{display:inline-block;margin:0 0 16px;padding:10px 18px;background:#1a1a1a;color:#fff;border:0;border-radius:8px;cursor:pointer;font:inherit}
+  @media print{body{background:#fff;padding:0}.inv{border:0}.btn{display:none}}
+</style></head><body>
+<div class="inv">
+  <button class="btn" onclick="window.print()">Download / Print PDF</button>
+  <div class="row">
+    <div>
+      <h1><?php echo esc_html( $payee['payee'] ); ?></h1>
+      <?php if ( ! empty( $payee['uen'] ) ) : ?><div class="muted small">UEN <?php echo esc_html( $payee['uen'] ); ?> · GST Reg</div><?php endif; ?>
+    </div>
+    <div style="text-align:right">
+      <div style="font-size:18px;font-weight:700">TAX INVOICE</div>
+      <div class="muted small"><?php echo esc_html( $inv['id'] ); ?></div>
+      <div class="muted small">Issued <?php echo esc_html( $issued ); ?></div>
+      <?php if ( $pay['status'] === 'paid' ) : ?><div style="margin-top:8px"><span class="paid">PAID</span></div><?php endif; ?>
+    </div>
+  </div>
+
+  <div class="row" style="margin-top:24px">
+    <div>
+      <div class="muted small">BILL TO</div>
+      <div><strong><?php echo esc_html( $bill_to ); ?></strong></div>
+      <div class="muted small"><?php echo esc_html( $bill_em ); ?></div>
+    </div>
+    <div style="text-align:right">
+      <div class="muted small">BOOKING</div>
+      <div><?php echo esc_html( $pay['ref'] ); ?></div>
+      <div class="muted small"><?php echo esc_html( $summary['datetime'] ); ?></div>
+    </div>
+  </div>
+
+  <table>
+    <thead><tr><th>Description</th><th class="r">Amount</th></tr></thead>
+    <tbody>
+      <?php if ( $itemised ) : ?>
+      <tr>
+        <td><?php echo esc_html( $summary['title'] ); ?><div class="muted small"><?php echo esc_html( $summary['subject_level'] . ' · ' . $summary['tutor'] . ' · ' . $summary['format'] ); ?></div></td>
+        <td class="r"><?php echo esc_html( $money( $base_gross ) ); ?></td>
+      </tr>
+      <?php foreach ( $inv_discounts as $d ) : ?>
+      <tr>
+        <td><?php echo esc_html( $d['label'] ); ?></td>
+        <td class="r">-<?php echo esc_html( $money( $d['amount'] ) ); ?></td>
+      </tr>
+      <?php endforeach; ?>
+      <?php else : ?>
+      <tr>
+        <td><?php echo esc_html( $summary['title'] ); ?><div class="muted small"><?php echo esc_html( $summary['subject_level'] . ' · ' . $summary['tutor'] . ' · ' . $summary['format'] ); ?></div></td>
+        <td class="r"><?php echo esc_html( $money( $net ) ); ?></td>
+      </tr>
+      <?php endif; ?>
+    </tbody>
+  </table>
+
+  <table class="totals">
+    <?php if ( $itemised ) : ?>
+    <tr class="grand"><td>Total <?php echo esc_html( $pay['status'] === 'paid' ? 'paid' : 'due' ); ?></td><td class="r"><?php echo esc_html( $money( $amount_num ) ); ?></td></tr>
+    <tr><td class="muted small">Net (excl. GST)</td><td class="r muted small"><?php echo esc_html( $money( $net ) ); ?></td></tr>
+    <tr><td class="muted small">of which GST (<?php echo esc_html( rtrim( rtrim( number_format( $gst_pct, 1 ), '0' ), '.' ) ); ?>%)</td><td class="r muted small"><?php echo esc_html( $money( $gst ) ); ?></td></tr>
+    <?php else : ?>
+    <tr><td>Subtotal (excl. GST)</td><td class="r"><?php echo esc_html( $money( $net ) ); ?></td></tr>
+    <tr><td>GST (<?php echo esc_html( rtrim( rtrim( number_format( $gst_pct, 1 ), '0' ), '.' ) ); ?>%)</td><td class="r"><?php echo esc_html( $money( $gst ) ); ?></td></tr>
+    <tr class="grand"><td>Total <?php echo esc_html( $pay['status'] === 'paid' ? 'paid' : 'due' ); ?> (<?php echo esc_html( str_replace( 'INCL. ', '', $pay['gst_note'] ) ); ?>)</td><td class="r"><?php echo esc_html( $money( $amount_num ) ); ?></td></tr>
+    <?php endif; ?>
+    <tr><td class="muted small">Method</td><td class="r muted small"><?php echo esc_html( $pay['method'] ); ?></td></tr>
+  </table>
+
+  <p class="muted small" style="margin-top:24px">This is a computer-generated tax invoice. <?php echo esc_html( $tax_footer ); ?> For queries, reply to your booking confirmation email.</p>
+</div>
+</body></html>
+<?php
+    return (string) ob_get_clean();
+}
+
+add_action( 'template_redirect', function () {
+    $action = isset( $_GET['mgk_action'] ) ? sanitize_key( wp_unslash( $_GET['mgk_action'] ) ) : '';
+    if ( $action !== 'invoice' ) return;
+
+    // Only a paid booking has an invoice.
+    $ctx = mgk_get_confirm_context();
+    if ( mgk_get_confirm_payment_status( $ctx ) !== 'paid' ) {
+        status_header( 404 );
+        wp_die( esc_html__( 'Invoice not available for this booking.', 'mgk' ), 'Invoice', [ 'response' => 404 ] );
+    }
+
+    nocache_headers();
+    header( 'Content-Type: text/html; charset=utf-8' );
+    echo mgk_render_invoice_html( $ctx ); // phpcs:ignore WordPress.Security.EscapeOutput
     exit;
 } );
 

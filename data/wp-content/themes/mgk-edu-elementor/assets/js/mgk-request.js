@@ -147,6 +147,7 @@
             var bmax = q('[data-budget-max-field]');
             var consent = q('#rq_consent');
             return {
+                child_name: val('#rq_child_name'),
                 child_level: val('#rq_level'),
                 subject: val('#rq_subject'),
                 preferred_days: days,
@@ -168,6 +169,7 @@
 
         function validate(data) {
             var errs = {};
+            if (present('child_name') && !(data.child_name && data.child_name.trim())) { errs.child_name = 'Please enter your child’s name.'; }
             if (present('child_level') && !data.child_level) { errs.child_level = 'Please select your child’s level.'; }
             if (present('subject') && !data.subject) { errs.subject = 'Please select a subject.'; }
             if (present('preferred_days')) {
@@ -182,6 +184,20 @@
             }
             if (present('pdpa_consent') && !data.pdpa_consent) { errs.pdpa_consent = 'Please agree to the PDPA Notice to continue.'; }
             return errs;
+        }
+
+        // General (non-field) submit error, shown by the button.
+        function submitError(msg) {
+            if (!submitBtn) { window.alert(msg); return; }
+            var box = scope.querySelector('.mgk-rq-submit-error');
+            if (!box) {
+                box = document.createElement('p');
+                box.className = 'mgk-rq-submit-error mgk-rq-err';
+                box.setAttribute('aria-live', 'polite');
+                box.style.cssText = 'color:#b32d2e;margin:8px 0 0;';
+                (submitBtn.parentNode || scope).insertBefore(box, submitBtn.nextSibling);
+            }
+            box.textContent = msg || '';
         }
 
         function setLoading(on) {
@@ -202,7 +218,7 @@
 
         function doSubmit(ev) {
             var data = collect();
-            ['child_level', 'subject', 'preferred_days', 'time_to', 'budget', 'note', 'email', 'pdpa_consent']
+            ['child_name', 'child_level', 'subject', 'preferred_days', 'time_to', 'budget', 'note', 'email', 'pdpa_consent']
                 .forEach(function (f) { setError(f, ''); });
             var errs = validate(data);
 
@@ -234,6 +250,7 @@
             });
 
             var payload = {
+                child_name: data.child_name,
                 child_level: data.child_level, subject: data.subject,
                 preferred_days: data.preferred_days,
                 time_from: data.time_from, time_to: data.time_to,
@@ -243,18 +260,40 @@
                 source_utm: data.source_utm, parent_name: 'Parent'
             };
 
+            submitError('');
             fetch(restUrl, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce || '' },
                 body: JSON.stringify(payload)
             }).then(function (r) {
-                return r.ok ? r.json() : Promise.reject(r);
+                return r.json().catch(function () { return {}; }).then(function (body) {
+                    return { ok: r.ok, status: r.status, body: body };
+                });
             }).then(function (res) {
-                track('request_form_success', { level: data.child_level, subject: data.subject });
-                var token = res && res.token ? res.token : '';
-                location.href = confirmUrl + (confirmUrl.indexOf('?') > -1 ? '&' : '?') + 'mgk_lead=' + encodeURIComponent(token);
-            }).catch(function () {
+                if (res.ok) {
+                    track('request_form_success', { level: data.child_level, subject: data.subject });
+                    var token = res.body && res.body.token ? res.body.token : '';
+                    location.href = confirmUrl + (confirmUrl.indexOf('?') > -1 ? '&' : '?') + 'mgk_lead=' + encodeURIComponent(token);
+                    return;
+                }
+                // Validation errors → show inline + STAY (never blind native-POST:
+                // that loses input and can hit nonce expiry → ?mgk_err=expired).
                 submitting = false;
+                setLoading(false);
+                if (res.status === 422 && res.body && res.body.errors) {
+                    Object.keys(res.body.errors).forEach(function (f) { setError(f, res.body.errors[f]); });
+                    var firstInvalid = scope.querySelector('.mgk-rq-field.is-invalid');
+                    if (firstInvalid) { firstInvalid.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                    track('request_form_error', { reason: 'validation', fields: Object.keys(res.body.errors).join(',') });
+                    return;
+                }
+                // Nonce/expired (403) or server (500) → clear, retryable message.
+                track('request_form_error', { reason: 'server', status: res.status });
+                submitError((res.body && res.body.message) || 'Something went wrong — please try again.');
+            }).catch(function () {
+                // True transport failure (offline) → fall back to the locked handler.
+                submitting = false;
+                setLoading(false);
                 track('request_form_error', { reason: 'rest_failed' });
                 if (nativeForm) { nativeForm.submit(); } else { fallbackPost(data); }
             });
@@ -277,6 +316,7 @@
             // nonce field name expected by the server handler.
             var srvNonce = (scope.querySelector('#mgk_request_nonce') || {}).value || '';
             if (srvNonce) { add('mgk_request_nonce', srvNonce); }
+            add('child_name', data.child_name);
             add('child_level', data.child_level);
             add('subject', data.subject);
             data.preferred_days.forEach(function (d) { add('preferred_days[]', d); });
@@ -301,6 +341,18 @@
                 if (nativeForm && submitBtn.type === 'submit') { return; }
                 doSubmit(ev);
             });
+        }
+
+        // If a prior non-JS fallback POST bounced back with ?mgk_err=…, explain it
+        // (the form is fresh + submittable now — don't leave a cryptic query param).
+        var em = location.search.match(/[?&]mgk_err=([a-z]+)/);
+        if (em && submitBtn) {
+            var msgs = {
+                expired: 'Your session timed out before that submitted. Please review your details and submit again.',
+                invalid: 'Please check the highlighted fields and submit again.',
+                server: 'Something went wrong on our side. Please try again.'
+            };
+            submitError(msgs[em[1]] || 'Please submit again.');
         }
     }
 

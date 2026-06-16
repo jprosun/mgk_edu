@@ -5,6 +5,7 @@ $atts = $args['atts'] ?? [];
 $ctx  = $args['context'] ?? [];
 $package = $ctx['package'] ?? [];
 $thread = $ctx['message_thread'] ?? [];
+$billing = $ctx['billing'] ?? [];
 ?>
 <section class="mgk-parent-dashboard mgk-parent-dashboard-actions-row">
     <div class="mgk-parent-dashboard__shell">
@@ -13,6 +14,9 @@ $thread = $ctx['message_thread'] ?? [];
             <div class="mgk-parent-dashboard-billing-line"><span><?php echo esc_html( $package['title'] ?? '' ); ?></span><strong><?php echo esc_html( $package['left'] ?? '' ); ?></strong></div>
             <div class="mgk-parent-dashboard-package-bar"><span></span></div>
             <p><?php echo esc_html( ( $package['used'] ?? '' ) . ' · ' . ( $package['method'] ?? '' ) ); ?></p>
+            <?php if ( ! empty( $billing['has'] ) ) : ?>
+                <p style="font-size:13px;color:#646970;margin:4px 0 0;">Last paid: <strong><?php echo esc_html( $billing['last_amount'] ); ?></strong> · <?php echo esc_html( $billing['last_method'] . ' · ' . $billing['last_date'] ); ?></p>
+            <?php endif; ?>
             <a class="mgk-parent-dashboard-btn mgk-parent-dashboard-btn--outline mgk-parent-dashboard-btn--full" href="<?php echo esc_url( $ctx['invoices_url'] ?? '#' ); ?>" data-event="billing_view_invoices_click"><?php echo esc_html( $atts['invoice_label'] ?? 'View invoices / receipts' ); ?></a>
         </article>
         <article class="mgk-parent-dashboard-action-card">

@@ -26,11 +26,9 @@ $a = wp_parse_args( (array) $args, [
     'btn_how'      => 'How matching works',
 ] );
 
-// Browse link preserves subject + level when known.
-$browse_args = [];
-if ( ! empty( $view['subject'] ) ) $browse_args['subject'] = $view['subject'];
-if ( ! empty( $view['level'] ) )   $browse_args['level']   = $view['level'];
-$browse_url = add_query_arg( $browse_args, home_url( '/student/teachers/' ) );
+// "Browse meanwhile" goes to the full tutor directory (no pre-applied filter) —
+// the parent browses freely while the agency hand-picks matches.
+$browse_url = home_url( '/student/teachers/' );
 
 // Email-only: show the masked email we'll send to (no phone/SMS).
 $email_mask = $view['email_mask'] !== '' ? $view['email_mask'] : '';

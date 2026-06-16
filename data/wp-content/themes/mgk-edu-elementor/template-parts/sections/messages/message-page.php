@@ -64,7 +64,10 @@ $messages = $thread['messages'] ?? [];
                             <div class="mgk-parent-message mgk-parent-message--in">
                                 <i aria-hidden="true"></i>
                                 <div>
-                                    <div class="mgk-parent-message-bubble mgk-parent-message-bubble--text"><span></span><span></span></div>
+                                    <div class="mgk-parent-message-bubble mgk-parent-message-bubble--text"><?php
+                                        if ( ! empty( $message['body'] ) ) { echo nl2br( esc_html( $message['body'] ) ); }
+                                        else { echo '<span></span><span></span>'; }
+                                    ?></div>
                                     <time><?php echo esc_html( $message['time'] ?? '' ); ?></time>
                                 </div>
                             </div>
@@ -92,7 +95,10 @@ $messages = $thread['messages'] ?? [];
                         <?php elseif ( $message['kind'] === 'outgoing_text' ) : ?>
                             <div class="mgk-parent-message mgk-parent-message--out">
                                 <div>
-                                    <div class="mgk-parent-message-bubble mgk-parent-message-bubble--out"><span></span><span></span></div>
+                                    <div class="mgk-parent-message-bubble mgk-parent-message-bubble--out"><?php
+                                        if ( ! empty( $message['body'] ) ) { echo nl2br( esc_html( $message['body'] ) ); }
+                                        else { echo '<span></span><span></span>'; }
+                                    ?></div>
                                     <time><?php echo esc_html( $message['time'] ?? '' ); ?></time>
                                 </div>
                             </div>
@@ -104,15 +110,37 @@ $messages = $thread['messages'] ?? [];
                         <?php echo esc_html( $atts['privacy_notice'] ?? '' ); ?>
                     </div>
                 <?php endif; ?>
-                <form class="mgk-parent-messages-composer" data-mgk-message-composer>
+                <?php $mgk_thread_id = $thread['id'] ?? ''; ?>
+                <form class="mgk-parent-messages-composer" data-mgk-message-composer
+                      data-thread="<?php echo esc_attr( $mgk_thread_id ); ?>"
+                      data-rest-url="<?php echo esc_url( rest_url( 'mgk/v1/messages/send' ) ); ?>"
+                      data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_rest' ) ); ?>">
                     <button type="button" class="mgk-parent-messages-attach" data-event="message_attachment_click" data-mgk-message-compose-open>🖼</button>
                     <button type="button" class="mgk-parent-messages-lesson-chip" data-mgk-message-compose-open>📎 <?php echo esc_html( $atts['lesson_chip'] ?? 'Lesson' ); ?></button>
                     <label>
                         <span class="screen-reader-text">Message</span>
-                        <textarea rows="1" placeholder="<?php echo esc_attr( $atts['input_placeholder'] ?? 'TYPE A MESSAGE...' ); ?>"></textarea>
+                        <textarea rows="1" name="mgk_message_body" placeholder="<?php echo esc_attr( $atts['input_placeholder'] ?? 'TYPE A MESSAGE...' ); ?>"<?php echo $mgk_thread_id ? '' : ' disabled'; ?>></textarea>
                     </label>
-                    <button type="submit" class="mgk-parent-messages-send" data-event="message_send"><?php echo esc_html( $atts['send_label'] ?? 'Send' ); ?></button>
+                    <button type="submit" class="mgk-parent-messages-send" data-event="message_send"<?php echo $mgk_thread_id ? '' : ' disabled'; ?>><?php echo esc_html( $atts['send_label'] ?? 'Send' ); ?></button>
                 </form>
+                <script>
+                (function(){
+                  var f=document.querySelector('[data-mgk-message-composer]'); if(!f||!window.fetch) return;
+                  f.addEventListener('submit',function(e){
+                    e.preventDefault();
+                    var ta=f.querySelector('textarea'), body=(ta.value||'').trim(), thread=f.getAttribute('data-thread');
+                    if(!body||!thread) return;
+                    var btn=f.querySelector('.mgk-parent-messages-send'); btn.disabled=true;
+                    fetch(f.getAttribute('data-rest-url'),{method:'POST',headers:{'Content-Type':'application/json','X-WP-Nonce':f.getAttribute('data-nonce')},credentials:'same-origin',body:JSON.stringify({thread:thread,body:body})})
+                      .then(function(r){return r.json().catch(function(){return{};}).then(function(j){return{ok:r.ok,body:j};});})
+                      .then(function(res){
+                        btn.disabled=false;
+                        if(res.ok){ location.reload(); }
+                        else { alert((res.body&&res.body.message)||'Could not send.'); }
+                      }).catch(function(){ btn.disabled=false; alert('Network error — try again.'); });
+                  });
+                })();
+                </script>
             </main>
         </div>
     </div>

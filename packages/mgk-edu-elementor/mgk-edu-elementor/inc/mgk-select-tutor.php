@@ -43,6 +43,36 @@ function mgk_get_booking_context_from_request() {
 }
 
 /**
+ * Resolve a REAL directory tutor (S02/S03 → "Book") straight from the ?tutor=
+ * slug, independent of any proposal batch. This is the direct-booking entry: the
+ * tutor the parent actually clicked must carry through S09→S10→S11 with the right
+ * name AND price (not a proposal/demo default).
+ *
+ * The returned array is the canonical profile tutor, enriched with `rate_num`
+ * (from meta) so the displayed trial offer (mgk_calculate_trial_offer) equals the
+ * server-charged price (mgk_engine_trial_price_for_tutor) — one source of truth.
+ *
+ * @return array|null  null when the slug isn't a real published mg_teacher.
+ */
+function mgk_resolve_direct_tutor_for_booking( $tutor_slug ) {
+    $tutor_slug = sanitize_title( (string) $tutor_slug );
+    if ( ! $tutor_slug || ! function_exists( 'mgk_profile_tutor' ) ) {
+        return null;
+    }
+    $tutor = mgk_profile_tutor( $tutor_slug );
+    if ( ! $tutor || empty( $tutor['id'] ) || get_post_type( (int) $tutor['id'] ) !== 'mg_teacher' ) {
+        return null;
+    }
+    if ( empty( $tutor['rate_num'] ) ) {
+        $tutor['rate_num'] = (int) get_post_meta( (int) $tutor['id'], 'mgk_rate_num', true );
+    }
+    if ( ! isset( $tutor['proposal_id'] ) ) {
+        $tutor['proposal_id'] = 0;
+    }
+    return $tutor;
+}
+
+/**
  * Resolve the selected tutor for booking from the proposal batch (locked
  * source). Falls back to demo data via mgk_get_proposal_batch() so the page
  * renders in a bare environment. Returns the normalised tutor array or null.
@@ -71,6 +101,23 @@ function mgk_get_selected_tutor_for_booking( $lead_token, $tutor_slug ) {
  */
 function mgk_get_select_tutor_view() {
     $context = mgk_get_booking_context_from_request();
+
+    // Direct booking from the tutor directory (S02/S03): no proposal/lead, just a
+    // real ?tutor= slug. Resolve that exact tutor so S09→S10→S11 show the chosen
+    // tutor's real name + price and the hold books the right tutor.
+    if ( empty( $context['lead_token'] ) ) {
+        $direct = mgk_resolve_direct_tutor_for_booking( $context['tutor_slug'] );
+        if ( $direct ) {
+            return [
+                'status'    => 'ok',
+                'context'   => $context,
+                'batch'     => [],
+                'tutor'     => $direct,
+                'offer'     => mgk_calculate_trial_offer( $direct ),
+                'breakdown' => function_exists( 'mgk_get_trial_price_breakdown' ) ? mgk_get_trial_price_breakdown( $direct ) : [],
+            ];
+        }
+    }
 
     if ( ! function_exists( 'mgk_get_proposal_batch' ) ) {
         return [ 'status' => 'not_found', 'context' => $context ];
@@ -161,7 +208,10 @@ function mgk_calculate_trial_offer( $tutor, $duration_min = MGK_TRIAL_DURATION_M
     $rate = (int) ( is_array( $tutor ) ? ( $tutor['rate_num'] ?? 0 ) : $tutor );
     if ( $rate <= 0 ) $rate = 65; // safe demo default
 
-    $pct   = (int) MGK_TRIAL_DISCOUNT_PCT;
+    // The trial % is agency-configurable (wp-admin → Discounts). Fall back to the
+    // constant so this stays correct even if the discount engine isn't loaded.
+    $pct   = function_exists( 'mgk_discount_rule' ) ? (int) mgk_discount_rule( 'trial_pct', MGK_TRIAL_DISCOUNT_PCT ) : (int) MGK_TRIAL_DISCOUNT_PCT;
+    if ( function_exists( 'mgk_discount_rule' ) && ! mgk_discount_rule( 'trial_enabled', 1 ) ) $pct = 0;
     $raw   = $rate * ( 1 - $pct / 100 );
     $trial = (int) ( round( $raw / 5 ) * 5 );        // nearest $5
     if ( $trial <= 0 ) $trial = (int) round( $raw );

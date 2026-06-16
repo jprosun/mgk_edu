@@ -1085,6 +1085,14 @@ button.mgk-bk-day { cursor: pointer; }
     border: 1px solid var(--bk-accent); background: var(--bk-accent-soft);
     font-size: 11px; font-weight: 600; color: var(--bk-ink);
 }
+.mgk-pay-voucher { margin: 10px 0 4px; padding: 10px 0; border-top: 1px dashed var(--bk-line, #d8d8d8); }
+.mgk-pay-voucher-label { display: block; font-size: 11px; font-weight: 700; letter-spacing: .03em; color: var(--bk-muted); margin-bottom: 6px; }
+.mgk-pay-voucher-row { display: flex; gap: 8px; }
+.mgk-pay-voucher-row input { flex: 1; min-width: 0; padding: 9px 10px; border: 1px solid var(--bk-line, #c3c4c7); font-size: 13px; letter-spacing: .04em; }
+.mgk-pay-voucher-apply { flex: 0 0 auto; padding: 9px 16px; border: 1px solid var(--bk-ink); background: #fff; font-size: 12px; font-weight: 800; cursor: pointer; }
+.mgk-pay-voucher-apply:hover { background: var(--bk-ink); color: #fff; }
+.mgk-pay-voucher-apply:disabled { opacity: .5; cursor: default; }
+.mgk-pay-voucher-fb { margin: 6px 0 0; font-size: 12px; }
 .mgk-pay-subtotal { border-bottom: 0 !important; }
 .mgk-pay-subtotal .mgk-bk-bd-label, .mgk-pay-subtotal .mgk-bk-bd-value { color: var(--bk-muted); font-size: 13px; }
 .mgk-pay-total { border-top: 1px solid var(--bk-ink); border-bottom: 0 !important; margin-top: 4px; padding-top: 12px !important; }

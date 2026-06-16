@@ -11,7 +11,7 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 $a = (array) ( $args ?? [] );
 
-$heading = $a['heading'] ?? 'Trial lesson booked!';
+$heading = $a['heading'] ?? ( ! empty( $a['is_package'] ) ? 'Package purchased!' : 'Trial lesson booked!' );
 $prefix  = $a['sent_prefix'] ?? 'CONFIRMATION';
 $conf    = (string) ( $a['confirmation'] ?? 'MGK-TRL-0842' );
 $email   = (string) ( $a['email'] ?? 'your.email@example.sg' );

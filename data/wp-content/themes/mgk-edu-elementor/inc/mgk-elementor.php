@@ -1899,6 +1899,20 @@ function mgk_elementor_sections() {
     };
 
     $rq_field_widgets = [
+        'mgk_request_field_child_name' => [
+            'title' => 'MGK · Field — Child Name', 'icon' => 'eicon-text-field',
+            'controls' => [
+                'label'       => [ 'type' => 'text', 'label' => 'Label', 'default' => "1 · CHILD'S NAME" ],
+                'placeholder' => [ 'type' => 'text', 'label' => 'Placeholder', 'default' => 'E.G. EMMA TAN' ],
+                'helper'      => [ 'type' => 'text', 'label' => 'Helper line (under field)', 'default' => 'First name is fine — used on your dashboard + lesson logs.' ],
+                'hide_helper' => $rq_hide_sw( 'Hide helper line' ),
+            ],
+            'targets' => [
+                'label' => mgk_style_text( 'Label', '.mgk-rq-label' ),
+                'input' => [ 'label' => 'Text Field', 'selector' => '.mgk-rq-child-name-input', 'features' => [ 'typography', 'color', 'background', 'border' ] ],
+                'helper'=> mgk_style_text( 'Helper line', '.mgk-rq-enum' ),
+            ],
+        ],
         'mgk_request_field_level' => [
             'title' => 'MGK · Field — Child Level', 'icon' => 'eicon-select',
             'controls' => [

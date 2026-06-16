@@ -29,8 +29,10 @@ $sub_lbl  = $a['subtotal_label'] ?? 'Subtotal';
 $tot_lbl  = $a['total_label']    ?? 'Total';
 
 $avatar = $tutor['avatar_url'] ?? '';
+$booking_id   = (int) ( $a['booking_id'] ?? 0 );
+$voucher_code = (string) ( $bd['voucher_code'] ?? '' );
 ?>
-<section class="mgk-bk-card mgk-pay-summary" data-reveal data-event="pay_summary_view">
+<section class="mgk-bk-card mgk-pay-summary" data-reveal data-event="pay_summary_view" data-booking-id="<?php echo esc_attr( $booking_id ); ?>">
     <span class="mgk-bk-sectag"><?php echo esc_html( $tag ); ?></span>
     <h2 class="mgk-pay-summary-heading"><?php echo esc_html( $heading ); ?></h2>
 
@@ -43,6 +45,7 @@ $avatar = $tutor['avatar_url'] ?? '';
     </div>
 
     <div class="mgk-bk-breakdown mgk-pay-breakdown">
+        <div data-mgk-bd-rows>
         <?php foreach ( $rows as $r ) :
             $cls = 'mgk-bk-bd-row';
             if ( ! empty( $r['accent'] ) ) $cls .= ' is-accent';
@@ -52,18 +55,37 @@ $avatar = $tutor['avatar_url'] ?? '';
             <span class="mgk-bk-bd-value"><?php echo esc_html( $r['value'] ?? '' ); ?></span>
         </div>
         <?php endforeach; ?>
+        </div>
 
         <?php if ( ! empty( $bd['cap_note'] ) ) : ?>
-        <p class="mgk-pay-cap-note" data-event="pay_discount_capped"><?php echo esc_html( $bd['cap_note'] ); ?></p>
+        <p class="mgk-pay-cap-note" data-event="pay_discount_capped" data-mgk-cap-note><?php echo esc_html( $bd['cap_note'] ); ?></p>
+        <?php endif; ?>
+
+        <?php if ( $booking_id ) : ?>
+        <div class="mgk-pay-voucher" data-mgk-voucher>
+            <label class="mgk-pay-voucher-label" for="mgk-voucher-code">Have a voucher?</label>
+            <div class="mgk-pay-voucher-row">
+                <input type="text" id="mgk-voucher-code" data-mgk-voucher-code
+                       value="<?php echo esc_attr( $voucher_code ); ?>"
+                       placeholder="Enter code" autocomplete="off" spellcheck="false"
+                       style="text-transform:uppercase">
+                <button type="button" class="mgk-pay-voucher-apply" data-mgk-voucher-apply>
+                    <?php echo $voucher_code ? 'Remove' : 'Apply'; ?>
+                </button>
+            </div>
+            <p class="mgk-pay-voucher-fb" data-mgk-voucher-fb<?php echo $voucher_code ? '' : ' hidden'; ?>>
+                <?php if ( $voucher_code ) : ?>✓ Voucher <strong><?php echo esc_html( $voucher_code ); ?></strong> applied<?php endif; ?>
+            </p>
+        </div>
         <?php endif; ?>
 
         <div class="mgk-bk-bd-row mgk-pay-subtotal">
             <span class="mgk-bk-bd-label"><?php echo esc_html( $sub_lbl ); ?></span>
-            <span class="mgk-bk-bd-value"><?php echo esc_html( $bd['subtotal'] ?? '' ); ?></span>
+            <span class="mgk-bk-bd-value" data-mgk-subtotal><?php echo esc_html( $bd['subtotal'] ?? '' ); ?></span>
         </div>
         <div class="mgk-bk-bd-row mgk-pay-total">
             <span class="mgk-bk-bd-label"><?php echo esc_html( $tot_lbl ); ?></span>
-            <span class="mgk-bk-bd-value"><?php echo esc_html( $bd['total'] ?? '' ); ?></span>
+            <span class="mgk-bk-bd-value" data-mgk-total><?php echo esc_html( $bd['total'] ?? '' ); ?></span>
         </div>
         <p class="mgk-bk-bd-gst mgk-pay-gst"><?php echo esc_html( $bd['gst_note'] ?? '' ); ?></p>
     </div>

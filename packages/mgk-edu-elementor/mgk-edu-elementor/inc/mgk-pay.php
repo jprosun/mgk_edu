@@ -86,6 +86,11 @@ function mgk_get_pay_order_summary( $tutor = null, $context = [] ) {
 
     $money = function ( $n ) { return '$' . number_format( (float) $n, 2 ); };
     $dur_h = rtrim( rtrim( number_format( $offer['duration_min'] / 60, 1 ), '0' ), '.' );
+    $gst_pct = function_exists( 'mgk_discount_rule' ) ? (int) mgk_discount_rule( 'gst_pct', MGK_GST_PCT ) : (int) MGK_GST_PCT;
+    $gst_inclusive = function_exists( 'mgk_discount_rule' ) ? ( (int) mgk_discount_rule( 'gst_inclusive', 1 ) === 1 ) : true;
+    $gst_note = $gst_inclusive
+        ? sprintf( 'INCL. %d%% GST (BR-04) · SGD', $gst_pct )
+        : sprintf( '+ %d%% GST (BR-04) · SGD', $gst_pct );
 
     $base       = (float) $offer['old_price'];
     $trial_line = (float) $offer['trial_price'];   // after the headline trial discount
@@ -96,27 +101,115 @@ function mgk_get_pay_order_summary( $tutor = null, $context = [] ) {
         [ 'label' => sprintf( 'Trial discount (%d%%)', (int) $offer['discount_percent'] ), 'value' => '-' . $money( $trial_off ), 'accent' => true, 'strong' => false ],
     ];
 
-    // Stacked loyalty discounts, computed on the trial line, capped (BR-05/06).
-    $discounts   = mgk_get_trial_discounts( $context );
-    $cap_amount  = $trial_line * ( MGK_DISCOUNT_STACK_CAP / 100 );
-    $stack_taken = 0.0;
-    $capped      = false;
-    foreach ( $discounts as $d ) {
-        $amt = $trial_line * ( (int) $d['pct'] / 100 );
-        if ( $stack_taken + $amt > $cap_amount ) {
-            $amt = max( 0, $cap_amount - $stack_taken );
-            $capped = true;
+    // A real HELD booking's price_amount is what Stripe will actually charge, so
+    // it is the single source of truth for the amount due — the displayed total
+    // must never differ from the charged amount. We re-derive the trial-discount
+    // line from it (base → charged) and skip the demo loyalty stack, which is only
+    // ever a preview affordance (real loyalty discounts would have to be applied at
+    // hold time to be charged).
+    $booking_price = null;
+    $booking_voucher = '';
+    $booking_line_label = sprintf( 'Trial lesson (%sh)', $dur_h );
+    $bid = (int) ( $context['booking_id'] ?? 0 );
+    if ( $bid && function_exists( 'mgk_get_booking_row' ) ) {
+        $brow = mgk_get_booking_row( $bid );
+        if ( $brow && isset( $brow['price_amount'] ) && in_array( $brow['status'], [ 'HELD', 'PENDING_PAYMENT', 'CONFIRMED', 'MANUAL_REVIEW' ], true ) ) {
+            $booking_price   = (float) $brow['price_amount'];
+            $booking_voucher = (string) ( $brow['voucher_code'] ?? '' );
+            $lesson_type = (string) ( $brow['lesson_type'] ?? 'TRIAL' );
+            if ( $lesson_type === 'PACKAGE_16' ) {
+                $booking_line_label = '16-lesson package';
+            } elseif ( $lesson_type === 'PACKAGE_8' ) {
+                $booking_line_label = '8-lesson package';
+            }
         }
-        $stack_taken += $amt;
-        $rows[] = [
-            'label'  => sprintf( '%s (%d%%)', $d['label'], (int) $d['pct'] ),
-            'value'  => '-' . $money( $amt ),
-            'accent' => true, 'strong' => false,
-        ];
     }
 
-    $subtotal = max( 0, $trial_line - $stack_taken );
-    $total    = $subtotal; // GST inclusive (BR-04): total already includes GST.
+    $capped = false;
+    if ( $booking_price !== null ) {
+        // Charge-authoritative: rebuild the WHOLE breakdown from the booking's
+        // stored fields (base_amount + discount_applied JSON + price_amount) so the
+        // rows shown are EXACTLY the discounts that were charged — the unified
+        // quote (mgk_quote) result, frozen at hold time.
+        $stored_base = isset( $brow['base_amount'] ) ? (float) $brow['base_amount'] : 0;
+        if ( $stored_base > 0 ) $base = $stored_base;
+        $applied = [];
+        if ( ! empty( $brow['discount_applied'] ) ) {
+            $decoded = json_decode( (string) $brow['discount_applied'], true );
+            if ( is_array( $decoded ) ) $applied = $decoded;
+        }
+        if ( $applied ) {
+            $sum_applied = 0.0;
+            $has_headline = false;
+            foreach ( $applied as $d ) {
+                $sum_applied += (float) ( $d['amount'] ?? 0 );
+                $key = (string) ( $d['key'] ?? '' );
+                $lbl = strtolower( (string) ( $d['label'] ?? '' ) );
+                if ( strpos( $key, 'headline:' ) === 0 || strpos( $lbl, 'trial discount' ) !== false ) {
+                    $has_headline = true;
+                }
+            }
+            $missing_headline = round( $base - $booking_price - $sum_applied, 2 );
+            if ( ! $has_headline && $missing_headline > 0.01 ) {
+                $pct = function_exists( 'mgk_discount_rule' ) ? (int) mgk_discount_rule( 'trial_pct', (int) $offer['discount_percent'] ) : (int) $offer['discount_percent'];
+                array_unshift( $applied, [
+                    'key'    => 'headline:trial',
+                    'label'  => sprintf( 'Trial discount (%d%%)', $pct ),
+                    'pct'    => $pct,
+                    'amount' => $missing_headline,
+                ] );
+            }
+            $sum_applied = 0.0;
+            foreach ( $applied as $d ) {
+                $sum_applied += (float) ( $d['amount'] ?? 0 );
+            }
+            $line_subtotal = max( 0, round( $base - $sum_applied, 2 ) );
+        }
+        $rows = [ [ 'label' => $booking_line_label, 'value' => $money( $base ), 'accent' => false, 'strong' => false ] ];
+        if ( $applied ) {
+            foreach ( $applied as $d ) {
+                $lbl = (string) ( $d['label'] ?? 'Discount' );
+                $pct = (int) ( $d['pct'] ?? 0 );
+                $has_pct = $pct && strpos( $lbl, '(' . $pct . '%' ) !== false;
+                $rows[] = [
+                    'label'  => ( $pct && ! $has_pct ) ? sprintf( '%s (%d%%)', $lbl, $pct ) : $lbl,
+                    'value'  => '-' . $money( (float) ( $d['amount'] ?? 0 ) ),
+                    'accent' => true, 'strong' => false,
+                ];
+            }
+        } else {
+            // Legacy booking with no stored breakdown → single derived discount line.
+            $line_subtotal = $booking_price;
+            if ( ! $gst_inclusive && $gst_pct > 0 ) {
+                $line_subtotal = round( $booking_price / ( 1 + $gst_pct / 100 ), 2 );
+            }
+            $disc_pct = $base > 0 ? (int) round( ( $base - $line_subtotal ) / $base * 100 ) : (int) $offer['discount_percent'];
+            $rows[]   = [ 'label' => sprintf( 'Trial discount (%d%%)', $disc_pct ), 'value' => '-' . $money( max( 0, $base - $line_subtotal ) ), 'accent' => true, 'strong' => false ];
+        }
+        $trial_line = ! empty( $line_subtotal ) ? (float) $line_subtotal : $booking_price;
+        $subtotal   = $trial_line;
+        $total      = $booking_price;
+    } else {
+        // Preview/demo: show the stacked loyalty discounts, capped (BR-05/06).
+        $discounts   = mgk_get_trial_discounts( $context );
+        $cap_amount  = $trial_line * ( MGK_DISCOUNT_STACK_CAP / 100 );
+        $stack_taken = 0.0;
+        foreach ( $discounts as $d ) {
+            $amt = $trial_line * ( (int) $d['pct'] / 100 );
+            if ( $stack_taken + $amt > $cap_amount ) {
+                $amt = max( 0, $cap_amount - $stack_taken );
+                $capped = true;
+            }
+            $stack_taken += $amt;
+            $rows[] = [
+                'label'  => sprintf( '%s (%d%%)', $d['label'], (int) $d['pct'] ),
+                'value'  => '-' . $money( $amt ),
+                'accent' => true, 'strong' => false,
+            ];
+        }
+        $subtotal = max( 0, $trial_line - $stack_taken );
+        $total    = $gst_inclusive ? $subtotal : round( $subtotal + ( $subtotal * $gst_pct / 100 ), 2 );
+    }
 
     $cap_note = $capped ? sprintf( 'Stacked discounts capped at %d%% (BR-05/06)', MGK_DISCOUNT_STACK_CAP ) : '';
 
@@ -129,9 +222,10 @@ function mgk_get_pay_order_summary( $tutor = null, $context = [] ) {
         'total_num'  => round( $total, 2 ),
         'base'       => $base,
         'trial_price'=> $trial_line,
-        'gst_note'   => sprintf( 'INCL. %d%% GST (BR-04) · SGD', MGK_GST_PCT ),
+        'gst_note'   => $gst_note,
         'cap_note'   => $cap_note,
         'duration_h' => $dur_h,
+        'voucher_code' => $booking_voucher,
     ];
 }
 

@@ -40,8 +40,8 @@ if ( ! defined( 'ABSPATH' ) ) exit;
  * are actually usable. An "enabled" checkbox is INTENT; a method is only ACTIVE
  * when it is also fully configured (tight logic, as requested):
  *   - PayNow active  ⟺ enabled AND a valid UEN is set
- *   - Stripe active  ⟺ enabled AND a secret key is set
- *   - Stripe is LIVE ⟺ secret key set (else the engine runs MOCK mode)
+ *   - Stripe active  ⟺ enabled (mock without keys, Connect/direct with keys)
+ *   - Stripe is LIVE ⟺ platform/direct secret key set
  *
  * @return array{
  *   paynow_active:bool, paynow_uen:string, paynow_payee:string,
@@ -57,8 +57,9 @@ function mgk_payment_config() {
 	$paynow_active = $paynow_on && mgk_paynow_is_valid_uen( $uen );
 
 	$stripe_on  = mgk_site_setting( 'pay_stripe_enabled', '0' ) === '1';
-	$secret     = function_exists( 'mgk_stripe_secret_key' ) ? mgk_stripe_secret_key() : '';
+	$secret      = function_exists( 'mgk_stripe_secret_key' ) ? mgk_stripe_secret_key() : '';
 	$stripe_live = $secret !== '';
+	$stripe_connected = function_exists( 'mgk_stripe_connected_account_id' ) ? mgk_stripe_connected_account_id() !== '' : false;
 	// Stripe is "active" as a method if enabled. In MOCK mode (no key) it still
 	// works end-to-end for testing, so we allow it when enabled even without a key.
 	$stripe_active = $stripe_on;
@@ -73,6 +74,7 @@ function mgk_payment_config() {
 		'paynow_payee'  => $payee,
 		'stripe_active' => $stripe_active,
 		'stripe_live'   => $stripe_live,
+		'stripe_connected' => $stripe_connected,
 		'methods'       => $methods,
 		'has_any'       => ! empty( $methods ),
 	];

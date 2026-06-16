@@ -35,7 +35,7 @@ add_shortcode( 'mgk_parent_empty_dashboard', function ( $atts ) {
         'primary_label'           => 'Find a Tutor - S02',
         'primary_url'             => '/student/teachers/',
         'secondary_label'         => '+ Add another child',
-        'secondary_url'           => '#',
+        'secondary_url'           => '/request-match/',
         'note'                    => 'EMPTY STATE REPLACES ALL DATA WIDGETS WITH ONBOARDING CTA. CHILD SWITCHER + ACCOUNT REMAIN AVAILABLE.',
         'hide_greeting'           => '',
         'hide_parent_name'        => '',
@@ -64,24 +64,30 @@ function mgk_render_dashboard_part( $part, $atts = [] ) {
     ] );
 }
 
+/** Preview = NOT a signed-in parent (Elementor editor / logged-out) → show sample. */
+function mgk_dashboard_is_preview() {
+    return ! ( function_exists( 'mgk_is_parent_user' ) && mgk_is_parent_user() );
+}
+
 function mgk_get_parent_dashboard_context() {
-    $parent_id = get_current_user_id();
-    $children  = mgk_get_parent_children( $parent_id );
-    $active    = mgk_get_active_child( $parent_id );
-    $child_id  = $active['id'] ?? 'demo-emma';
+    $parent_id  = get_current_user_id();
+    $children   = mgk_get_parent_children( $parent_id );
+    $active      = mgk_get_active_child( $parent_id );
+    // Tri-state child id: real child post id | 0 (signed-in, no child yet) |
+    // 'demo-emma' (preview only). Drives real-vs-empty-vs-sample everywhere.
+    $child_id   = $active['id'] ?? ( mgk_dashboard_is_preview() ? 'demo-emma' : 0 );
 
     return [
         'parent_id'        => $parent_id,
-        'parent_name'      => 'Mrs Tan',
-        'date_line'        => 'TUESDAY 3 JUNE 2026 · 2 ACTIVE CHILDREN · RENEWAL DUE SOON',
+        'parent_name'      => mgk_dashboard_parent_name( $parent_id ),
+        'date_line'        => mgk_dashboard_date_line( $children ),
+        'add_child_url'    => mgk_get_add_child_url(),
+        'logout_url'       => function_exists( 'mgk_logout_url' ) ? mgk_logout_url() : wp_logout_url( mgk_url( '/login/' ) ),
+        'unread_total'     => function_exists( 'mgk_parent_total_unread' ) ? (int) mgk_parent_total_unread( $parent_id ) : 0,
+        'messages_url'     => mgk_url( '/parent/messages/' ),
         'children'         => $children,
         'active_child'     => $active,
-        'renewal'          => [
-            'show'     => true,
-            'title'    => "Emma's package ends in 4 weeks (T-4wk · BR-12)",
-            'subline'  => '2 OF 16 LESSONS REMAINING · RENEW NOW TO KEEP MS LEE & SAME SLOT',
-            'renew_url'=> mgk_get_renewal_url( $child_id, 'demo-booking' ),
-        ],
+        'renewal'          => mgk_get_renewal_nudge( $child_id ),
         'kpis'             => mgk_get_dashboard_kpis( $child_id ),
         'progress'         => mgk_get_child_progress_series( $child_id, '8w' ),
         'latest_log'       => mgk_get_latest_lesson_log( $child_id ),
@@ -89,21 +95,131 @@ function mgk_get_parent_dashboard_context() {
         'upcoming_lessons' => mgk_get_upcoming_lessons( $parent_id ),
         'package'          => mgk_get_active_package_summary( $child_id ),
         'invoices_url'     => mgk_get_invoices_url( $parent_id ),
+        'billing'          => mgk_get_parent_billing( $parent_id ),
         'message_thread'   => mgk_get_primary_tutor_thread( $child_id ),
         'buy_package_url'  => mgk_get_buy_package_url( $child_id ),
         'quick_links'      => mgk_get_parent_dashboard_quick_links(),
     ];
 }
 
+/** Parent's display name for the welcome line (real wp_user, else demo). */
+function mgk_dashboard_parent_name( $parent_id ) {
+    $parent_id = (int) $parent_id;
+    if ( ! $parent_id ) return 'Mrs Tan';
+    $full = (string) get_user_meta( $parent_id, 'mgk_parent_full_name', true );
+    if ( $full ) return $full;
+    $u = get_user_by( 'id', $parent_id );
+    return $u ? ( $u->display_name ?: $u->user_email ) : 'Mrs Tan';
+}
+
+/** Subline: "<n> active child(ren)" from the real linked children. */
+function mgk_dashboard_date_line( $children ) {
+    $n = is_array( $children ) ? count( $children ) : 0;
+    if ( ! $n ) return 'WELCOME — LET’S GET STARTED';
+    return sprintf( '%d ACTIVE %s', $n, $n === 1 ? 'CHILD' : 'CHILDREN' );
+}
+
+/** Add-child routes back to the S07 request-match form (low-friction, BR: no re-entry of identity). */
+function mgk_get_add_child_url() {
+    return mgk_url( '/request-match/' );
+}
+
+/** Map a real mg_child post → dashboard child shape. */
+function mgk_map_child_post( $post, $active = false ) {
+    $id    = (int) ( is_object( $post ) ? $post->ID : $post );
+    $name  = (string) get_post_meta( $id, 'mgk_child_full_name', true );
+    if ( $name === '' && is_object( $post ) ) $name = $post->post_title;
+    $level = '';
+    $term_id = (int) get_post_meta( $id, 'mgk_child_current_level', true );
+    if ( $term_id ) {
+        $t = get_term( $term_id );
+        if ( $t && ! is_wp_error( $t ) ) $level = $t->name;
+    }
+    return [ 'id' => $id, 'name' => $name, 'level' => $level, 'active' => (bool) $active ];
+}
+
+/**
+ * Which child is currently being VIEWED: the `?child=<id>` selection when it
+ * belongs to this parent, else the first child. This is the single source of
+ * truth for the switcher — every dashboard widget re-renders for this id on
+ * load (server-truth-on-load, no client state to drift).
+ */
+function mgk_resolve_active_child_id( $posts ) {
+    $ids = [];
+    foreach ( (array) $posts as $p ) {
+        $ids[] = (int) ( is_object( $p ) ? $p->ID : $p );
+    }
+    $ids = array_values( array_filter( $ids ) );
+    if ( ! $ids ) return 0;
+    $req = isset( $_GET['child'] ) ? (int) $_GET['child'] : 0;
+    if ( $req && in_array( $req, $ids, true ) ) return $req;   // validated to this parent
+    return $ids[0];
+}
+
 function mgk_get_parent_children( $parent_id ) {
-    return [
-        [ 'id' => 'demo-emma', 'name' => 'Emma', 'level' => 'P5', 'active' => true ],
-        [ 'id' => 'demo-ryan', 'name' => 'Ryan', 'level' => 'Sec 2', 'active' => false ],
-    ];
+    $parent_id = (int) $parent_id;
+    if ( $parent_id && function_exists( 'mgk_parent_children' ) ) {
+        $posts     = mgk_parent_children( $parent_id );
+        $active_id = mgk_resolve_active_child_id( $posts );
+        $out       = [];
+        foreach ( $posts as $p ) {
+            $pid   = (int) ( is_object( $p ) ? $p->ID : $p );
+            $out[] = mgk_map_child_post( $p, $pid === $active_id );
+        }
+        // A signed-in parent sees ONLY their real children — even if empty
+        // (NO demo Emma/Ryan). Demo is reserved for preview/editor.
+        if ( $out || ! mgk_dashboard_is_preview() ) {
+            return $out;
+        }
+    }
+    // Demo fallback — preview / Elementor editor only.
+    if ( mgk_dashboard_is_preview() ) {
+        return [
+            [ 'id' => 'demo-emma', 'name' => 'Emma', 'level' => 'P5', 'active' => true ],
+            [ 'id' => 'demo-ryan', 'name' => 'Ryan', 'level' => 'Sec 2', 'active' => false ],
+        ];
+    }
+    return [];
 }
 
 function mgk_get_active_child( $parent_id ) {
-    return [ 'id' => 'demo-emma', 'name' => 'Emma', 'level' => 'P5', 'active' => true ];
+    $children = mgk_get_parent_children( $parent_id );
+    if ( $children ) {
+        foreach ( $children as $c ) {
+            if ( ! empty( $c['active'] ) ) return $c;   // the ?child= selection
+        }
+        return $children[0];
+    }
+    return mgk_dashboard_is_preview()
+        ? [ 'id' => 'demo-emma', 'name' => 'Emma', 'level' => 'P5', 'active' => true ]
+        : [];
+}
+
+/**
+ * Bookings for a dashboard child, matched by (parent_user_id, student_name).
+ *  - returns NULL  → preview/sample (child_id is non-numeric, e.g. 'demo-emma')
+ *  - returns []    → signed-in real parent with no matching bookings (honest empty)
+ *  - returns rows  → the child's real bookings
+ */
+function mgk_dashboard_child_bookings( $child_id ) {
+    if ( ! is_numeric( $child_id ) ) return null;   // preview
+    $child_id = (int) $child_id;
+    if ( ! $child_id || ! function_exists( 'mgk_booking_table' ) ) return [];
+    $parent = (int) get_post_meta( $child_id, 'mgk_child_parent_user', true );
+    $name   = (string) ( get_post_meta( $child_id, 'mgk_child_full_name', true ) ?: get_the_title( $child_id ) );
+    if ( ! $parent || $name === '' ) return [];
+    global $wpdb;
+    $table = mgk_booking_table( 'bookings' );
+    return (array) $wpdb->get_results( $wpdb->prepare(
+        "SELECT * FROM {$table} WHERE parent_user_id = %d AND student_name = %s ORDER BY start_at_utc ASC",
+        $parent, $name
+    ), ARRAY_A );
+}
+
+/** Resolve a dashboard child's display name (real post, or demo). */
+function mgk_dashboard_child_name( $child_id ) {
+    if ( ! is_numeric( $child_id ) || ! (int) $child_id ) return 'Emma';
+    return (string) ( get_post_meta( (int) $child_id, 'mgk_child_full_name', true ) ?: get_the_title( (int) $child_id ) ?: 'your child' );
 }
 
 function mgk_should_show_renewal_nudge( $enrolment ) {
@@ -119,29 +235,114 @@ function mgk_snooze_renewal_nudge( $child_id, $days = 7 ) {
 }
 
 function mgk_get_dashboard_kpis( $child_id ) {
+    $rows = mgk_dashboard_child_bookings( $child_id );
+
+    // Preview / sample.
+    if ( $rows === null ) {
+        return [
+            [ 'value' => '14',   'label' => 'LESSONS DONE' ],
+            [ 'value' => '2',    'label' => 'REMAINING' ],
+            [ 'value' => '+1.5', 'label' => 'GRADE ↑ (TUTOR-REPORTED)' ],
+            [ 'value' => '96%',  'label' => 'ATTENDANCE' ],
+        ];
+    }
+
+    // Real: prefer the enrolment + lesson_log model.
+    $s = function_exists( 'mgk_child_learning_stats' ) ? mgk_child_learning_stats( $child_id ) : [ 'has_enrolment' => false ];
+    if ( ! empty( $s['has_enrolment'] ) ) {
+        return [
+            [ 'value' => (string) $s['lessons_done'],            'label' => 'LESSONS DONE' ],
+            [ 'value' => (string) $s['remaining'],               'label' => 'REMAINING' ],
+            [ 'value' => strtoupper( $s['engagement_label'] ),   'label' => 'ENGAGEMENT' ],
+            [ 'value' => $s['attendance_pct'] . '%',             'label' => 'ATTENDANCE' ],
+        ];
+    }
+
+    // No enrolment yet → trial/booking state (grade/attendance need lessons → —).
+    $now = gmdate( 'Y-m-d H:i:s' );
+    $done = $upcoming = 0;
+    foreach ( $rows as $r ) {
+        if ( $r['status'] === 'COMPLETED' ) {
+            $done++;
+        } elseif ( $r['status'] === 'CONFIRMED' && $r['end_at_utc'] >= $now ) {
+            $upcoming++;
+        }
+    }
     return [
-        [ 'value' => '14',   'label' => 'LESSONS DONE' ],
-        [ 'value' => '2',    'label' => 'REMAINING' ],
-        [ 'value' => '+1.5', 'label' => 'GRADE ↑ (TUTOR-REPORTED)' ],
-        [ 'value' => '96%',  'label' => 'ATTENDANCE' ],
+        [ 'value' => (string) $done,     'label' => 'LESSONS DONE' ],
+        [ 'value' => (string) $upcoming, 'label' => 'UPCOMING' ],
+        [ 'value' => '—',                'label' => 'ENGAGEMENT (AFTER 1ST LESSON)' ],
+        [ 'value' => '—',                'label' => 'ATTENDANCE (AFTER 1ST LESSON)' ],
     ];
 }
 
 function mgk_get_child_progress_series( $child_id, $range = '8w' ) {
+    $rows = mgk_dashboard_child_bookings( $child_id );
+    $name = mgk_dashboard_child_name( $child_id );
+
+    if ( $rows === null ) {
+        return [
+            'title'       => 'Weekly progress — ' . $name,
+            'range_label' => 'LAST 8 WEEKS ▾',
+            'description' => 'Bar/line chart: lessons attended + topic mastery % per week',
+            'legend'      => 'Attendance · Mastery % · Source: tutor lesson log (FR-LESSON-*)',
+        ];
+    }
+
+    // Real series from the lesson_log (engagement per lesson_number).
+    $s = function_exists( 'mgk_child_learning_stats' ) ? mgk_child_learning_stats( $child_id ) : [ 'series' => [] ];
+    if ( empty( $s['series'] ) ) {
+        return [
+            'title'       => 'Progress — ' . $name,
+            'range_label' => '',
+            'description' => 'No lessons logged yet — your tutor adds progress after each session.',
+            'legend'      => '',
+            'series'      => [],
+            'empty'       => true,
+        ];
+    }
+    $first = $s['series'][0]['label']; $last = end( $s['series'] )['label'];
     return [
-        'title'       => 'Weekly progress — Emma',
-        'range_label' => 'LAST 8 WEEKS ▾',
-        'description' => 'Bar/line chart: lessons attended + topic mastery % per week',
-        'legend'      => 'Attendance · Mastery % · Source: tutor lesson log (FR-LESSON-*)',
+        'title'       => 'Progress — ' . $name,
+        'range_label' => count( $s['series'] ) . ' LESSONS',
+        'description' => 'Engagement per lesson: ' . $first . ' → ' . $last . ' (avg ' . $s['engagement_label'] . ')',
+        'legend'      => 'Y = engagement (Needs work → Excellent) · X = lesson · Source: tutor lesson log',
+        'series'      => $s['series'],
     ];
 }
 
 function mgk_get_latest_lesson_log( $child_id ) {
+    $rows = mgk_dashboard_child_bookings( $child_id );
+
+    if ( $rows === null ) {
+        return [
+            'date_subject' => '31 MAY · P5 MATH',
+            'topic'        => 'FRACTIONS',
+            'status'       => '✓ LOGGED',
+            'summary'      => 'Homework set: Pg 42-44 · Next: Decimals',
+        ];
+    }
+
+    // Real: newest lesson_log for the child.
+    $s = function_exists( 'mgk_child_learning_stats' ) ? mgk_child_learning_stats( $child_id ) : [ 'latest' => null ];
+    $l = $s['latest'] ?? null;
+    if ( ! $l ) {
+        return [
+            'date_subject' => '—',
+            'topic'        => 'No lessons logged yet',
+            'status'       => '',
+            'summary'      => 'Your tutor posts a lesson log after each session — it’ll appear here.',
+            'empty'        => true,
+        ];
+    }
+    $date = $l['date'] ? strtoupper( gmdate( 'j M', strtotime( $l['date'] ) ) ) : ( 'LESSON ' . $l['number'] );
+    $subj = $s['subject'] ? ' · ' . strtoupper( $s['subject'] ) : '';
+    $hw   = $l['homework'] ? 'Homework: ' . $l['homework'] : '';
     return [
-        'date_subject' => '31 MAY · P5 MATH',
-        'topic'        => 'FRACTIONS',
-        'status'       => '✓ LOGGED',
-        'summary'      => 'Homework set: Pg 42-44 · Next: Decimals',
+        'date_subject' => $date . $subj,
+        'topic'        => strtoupper( $l['topic'] ?: 'Lesson ' . $l['number'] ),
+        'status'       => $l['attendance'] === 'ATTENDED' ? '✓ LOGGED' : strtoupper( $l['attendance'] ),
+        'summary'      => trim( $hw . ( $hw && $l['comment'] ? ' · ' : '' ) . $l['comment'] ) ?: ( 'Engagement: ' . $l['eng_label'] ),
     ];
 }
 
@@ -150,6 +351,34 @@ function mgk_get_lesson_logs_url( $child_id ) {
 }
 
 function mgk_get_upcoming_lessons( $parent_id ) {
+    $parent_id = (int) $parent_id;
+
+    // ── Real: the parent's confirmed, not-yet-finished bookings ──
+    if ( $parent_id && function_exists( 'mgk_booking_table' ) && function_exists( 'mgk_booking_view' ) ) {
+        global $wpdb;
+        $table = mgk_booking_table( 'bookings' );
+        $rows  = $wpdb->get_results( $wpdb->prepare(
+            "SELECT * FROM {$table} WHERE parent_user_id = %d AND status IN ('CONFIRMED','COMPLETED') AND end_at_utc >= %s ORDER BY start_at_utc ASC LIMIT 10",
+            $parent_id, gmdate( 'Y-m-d H:i:s' )
+        ), ARRAY_A );
+        if ( $rows ) {
+            $out = [];
+            foreach ( $rows as $r ) {
+                $bv = mgk_booking_view( $r );
+                if ( empty( $bv['found'] ) ) continue;
+                $out[] = [
+                    'id'             => $bv['code'],
+                    'time'           => strtoupper( trim( $bv['slot']['date_label'] . ' · ' . $bv['slot']['time_label'] ) ),
+                    'meta'           => strtoupper( trim( implode( ' · ', array_filter( [ $bv['student_name'], $bv['subject'], $bv['tutor']['name'] ] ) ) ) ),
+                    'reschedule_url' => mgk_url( '/trial-confirmed/?booking=' . rawurlencode( $bv['code'] ) ) . '#mgk-reschedule',
+                    'message_url'    => mgk_get_message_thread_url( $bv['tutor']['slug'] ?: 'tutor', (string) ( $bv['student_name'] ?: 'child' ) ),
+                ];
+            }
+            if ( $out ) return $out;
+        }
+    }
+
+    // Demo fallback (preview / no bookings yet).
     return [
         [
             'id' => 'demo-lesson-1', 'time' => 'WED 4 JUN · 4:00PM',
@@ -180,23 +409,170 @@ function mgk_get_book_next_lesson_url( $child_id ) {
 }
 
 function mgk_get_active_package_summary( $child_id ) {
+    $rows = mgk_dashboard_child_bookings( $child_id );
+    $name = mgk_dashboard_child_name( $child_id );
+
+    if ( $rows === null ) {
+        return [
+            'title' => 'EMMA PKG 16',
+            'left'  => '2 LEFT',
+            'used'  => '14/16 USED · VALID UNTIL 31 JUL 2026',
+            'method'=> 'PAYNOW',
+        ];
+    }
+
+    // Real enrolment → package usage.
+    $s = function_exists( 'mgk_child_learning_stats' ) ? mgk_child_learning_stats( $child_id ) : [ 'has_enrolment' => false ];
+    if ( ! empty( $s['has_enrolment'] ) ) {
+        $valid = $s['valid_until'] ? ' · VALID UNTIL ' . strtoupper( gmdate( 'j M Y', strtotime( $s['valid_until'] ) ) ) : '';
+        $plan  = str_replace( '_', ' ', $s['plan_type'] );
+        return [
+            'title' => strtoupper( $name ) . ' · ' . strtoupper( $plan ),
+            'left'  => $s['remaining'] . ' LEFT',
+            'used'  => $s['lessons_done'] . '/' . $s['lessons_total'] . ' USED' . $valid,
+            'method'=> 'PAYNOW',
+        ];
+    }
+
+    // No enrolment yet → honest trial state.
+    $has_trial = false;
+    foreach ( $rows as $r ) {
+        if ( $r['lesson_type'] === 'TRIAL' && in_array( $r['status'], [ 'CONFIRMED', 'COMPLETED' ], true ) ) { $has_trial = true; }
+    }
+    if ( $has_trial ) {
+        return [
+            'title' => strtoupper( $name ) . ' — TRIAL',
+            'left'  => 'TRIAL',
+            'used'  => 'No package yet — buy 8 or 16 lessons to keep going',
+            'method'=> 'PAYNOW',
+        ];
+    }
     return [
-        'title' => 'EMMA PKG 16',
-        'left'  => '2 LEFT',
-        'used'  => '14/16 USED · VALID UNTIL 31 JUL 2026',
-        'method'=> 'PAYNOW',
+        'title' => strtoupper( $name ),
+        'left'  => '',
+        'used'  => 'No active package yet',
+        'method'=> '',
     ];
 }
 
+/** Renewal nudge — only when a real package is near its end (BR-12). */
+function mgk_get_renewal_nudge( $child_id ) {
+    if ( ! is_numeric( $child_id ) ) {
+        // Preview sample.
+        return [
+            'show'      => true,
+            'title'     => "Emma's package ends in 4 weeks (T-4wk · BR-12)",
+            'subline'   => '2 OF 16 LESSONS REMAINING · RENEW NOW TO KEEP MS LEE & SAME SLOT',
+            'renew_url' => mgk_get_renewal_url( $child_id, 'demo-booking' ),
+        ];
+    }
+    // Real: BR-12 — nudge when exactly 1 lesson remains in an active package.
+    $s = function_exists( 'mgk_child_learning_stats' ) ? mgk_child_learning_stats( $child_id ) : [ 'renewal_due' => false ];
+    if ( empty( $s['renewal_due'] ) ) {
+        return [ 'show' => false ];
+    }
+    $name = mgk_dashboard_child_name( $child_id );
+    return [
+        'show'      => true,
+        'title'     => $name . '’s package has 1 lesson left (BR-12)',
+        'subline'   => $s['lessons_done'] . ' OF ' . $s['lessons_total'] . ' DONE · RENEW NOW TO KEEP YOUR TUTOR & SLOT',
+        'renew_url' => mgk_get_buy_package_url( $child_id ),
+    ];
+}
+
+/** Latest paid booking's e-invoice for this parent (real), else '#'. */
 function mgk_get_invoices_url( $parent_id ) {
+    $parent_id = (int) $parent_id;
+    if ( $parent_id && function_exists( 'mgk_booking_table' ) ) {
+        global $wpdb;
+        $t = mgk_booking_table( 'bookings' );
+        $code = $wpdb->get_var( $wpdb->prepare(
+            "SELECT booking_code FROM {$t} WHERE parent_user_id = %d AND status IN ('CONFIRMED','COMPLETED') ORDER BY COALESCE(confirmed_at_utc, created_at_utc) DESC LIMIT 1",
+            $parent_id
+        ) );
+        if ( $code ) {
+            return add_query_arg( [ 'mgk_action' => 'invoice', 'booking' => rawurlencode( $code ) ], home_url( '/trial-confirmed/' ) );
+        }
+    }
     return '#';
 }
 
-function mgk_get_primary_tutor_thread( $child_id ) {
+/** Real billing summary for the parent: last payment + count, from mgk_payments. */
+function mgk_get_parent_billing( $parent_id ) {
+    $parent_id = (int) $parent_id;
+    if ( ! $parent_id || ! function_exists( 'mgk_booking_table' ) ) {
+        return [ 'has' => false ];
+    }
+    global $wpdb;
+    $b = mgk_booking_table( 'bookings' );
+    $p = mgk_booking_table( 'payments' );
+    $row = $wpdb->get_row( $wpdb->prepare(
+        "SELECT pay.amount, pay.currency, pay.provider, pay.paid_at_utc
+         FROM {$p} pay JOIN {$b} bk ON bk.id = pay.booking_id
+         WHERE bk.parent_user_id = %d AND pay.status = 'SUCCEEDED'
+         ORDER BY pay.paid_at_utc DESC LIMIT 1",
+        $parent_id
+    ), ARRAY_A );
+    if ( ! $row ) return [ 'has' => false ];
+    $method = [ 'STRIPE' => 'Card', 'PAYNOW' => 'PayNow', 'MOCK' => 'PayNow' ][ strtoupper( (string) $row['provider'] ) ] ?? ucfirst( strtolower( (string) $row['provider'] ) );
     return [
-        'tutor' => 'MS LEE',
-        'status'=> 'ONLINE · 2 UNREAD',
-        'url'   => mgk_get_message_thread_url( 'demo-ms-lee', $child_id ),
+        'has'        => true,
+        'last_amount'=> '$' . number_format( (float) $row['amount'], 2 ),
+        'last_method'=> $method,
+        'last_date'  => $row['paid_at_utc'] ? gmdate( 'j M Y', strtotime( $row['paid_at_utc'] ) ) : '',
+    ];
+}
+
+function mgk_get_primary_tutor_thread( $child_id ) {
+    $rows = mgk_dashboard_child_bookings( $child_id );
+
+    if ( $rows === null ) {
+        return [
+            'tutor' => 'MS LEE',
+            'status'=> 'ONLINE · 2 UNREAD',
+            'url'   => mgk_get_message_thread_url( 'demo-ms-lee', $child_id ),
+        ];
+    }
+
+    // Real: the tutor LINKED to this child — enrolment tutor first, else the
+    // child's most recent booking tutor. This is the explicit parent↔child↔tutor
+    // relationship surfaced as a field (it lives in mg_enrolment / mgk_bookings).
+    $stats    = function_exists( 'mgk_child_learning_stats' ) ? mgk_child_learning_stats( $child_id ) : [];
+    $tutor_id = 0;
+    if ( ! empty( $stats['enrolment_id'] ) ) {
+        $tutor_id = (int) get_post_meta( (int) $stats['enrolment_id'], 'mgk_enr_tutor_id', true );
+    }
+    if ( ! $tutor_id ) {
+        foreach ( array_reverse( $rows ) as $r ) {
+            if ( ! empty( $r['tutor_post_id'] ) ) { $tutor_id = (int) $r['tutor_post_id']; break; }
+        }
+    }
+    if ( ! $tutor_id ) {
+        return [ 'tutor' => '—', 'status' => 'No tutor assigned yet', 'relation' => '', 'tier' => '', 'unread' => 0, 'url' => mgk_get_message_thread_url( 'tutor', (string) $child_id ) ];
+    }
+
+    $p     = get_post( $tutor_id );
+    $name  = $p ? $p->post_title : '—';
+    $slug  = $p ? $p->post_name : 'tutor';
+    $tier  = (string) get_post_meta( $tutor_id, 'mgk_tier', true );
+    $child = mgk_dashboard_child_name( $child_id );
+    $subj  = ! empty( $stats['subject'] ) ? $stats['subject'] . ' ' : '';
+    $relation = trim( $child . '’s ' . $subj . 'tutor' );
+
+    // Real unread from the messaging model when present (else 0).
+    $unread = 0;
+    if ( function_exists( 'mgk_thread_key_for' ) && function_exists( 'mgk_get_thread_unread_count' ) ) {
+        $unread = (int) mgk_get_thread_unread_count( mgk_thread_key_for( (int) $child_id, $tutor_id ) );
+    }
+
+    return [
+        'tutor'    => strtoupper( $name ),
+        'relation' => $relation,
+        'status'   => strtoupper( $relation ) . ( $unread ? ' · ' . $unread . ' UNREAD' : '' ),
+        'tier'     => $tier,
+        'unread'   => $unread,
+        'tutor_id' => $tutor_id,
+        'url'      => mgk_get_message_thread_url( $slug, (string) $child_id ),
     ];
 }
 

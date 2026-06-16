@@ -118,6 +118,59 @@
     var restUrl = (window.mgkBookingData && window.mgkBookingData.restUrl) || '/wp-json/mgk/v1/';
     var nonce = (window.mgkBookingData && window.mgkBookingData.nonce) || '';
 
+    /* ── Email capture (account auto-create) ──────────────── */
+    function isValidEmail(v) { return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test((v || '').trim()); }
+    function payEmailInput() { return document.querySelector('[data-mgk-pay-email]'); }
+    function emailFeedback(input) {
+        var host = (input.closest && input.closest('.mgk-pay-account')) || input.parentNode;
+        var fb = host.querySelector('[data-mgk-email-fb]');
+        if (!fb) {
+            fb = document.createElement('p');
+            fb.setAttribute('data-mgk-email-fb', '');
+            fb.style.cssText = 'font-size:12px;margin:4px 0 0;';
+            host.appendChild(fb);
+        }
+        return fb;
+    }
+
+    /* Save the email to the booking on blur, so it sticks even if the booking is
+       later completed via an admin force-confirm. The pay CTA also sends it
+       (atomic with checkout). Reuses booking id from the CTA. */
+    function initEmailCapture() {
+        var input = payEmailInput();
+        var cta = document.querySelector('[data-mgk-pay-cta]');
+        if (!input || !cta || !window.fetch) { return; }
+        var bookingId = parseInt(cta.getAttribute('data-booking-id') || '0', 10);
+        if (!bookingId) { return; } // demo/preview: nothing to persist to
+        var lastSaved = '';
+        input.addEventListener('blur', function () {
+            var email = (input.value || '').trim();
+            if (!email || email === lastSaved || !isValidEmail(email)) { return; }
+            var fb = emailFeedback(input);
+            fb.textContent = 'Saving…'; fb.style.color = '#646970';
+            fetch(restUrl + 'booking/' + bookingId + '/attach-contact', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
+                body: JSON.stringify({ email: email })
+            }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+              .then(function (res) {
+                  if (res.ok && res.body && res.body.saved) {
+                      lastSaved = email;
+                      fb.textContent = '✓ Saved — we’ll send your booking + sign-in link here.';
+                      fb.style.color = '#1a7f37';
+                      track('pay_email_saved', {});
+                  } else {
+                      fb.textContent = (res.body && res.body.message) || 'Could not save email.';
+                      fb.style.color = '#b32d2e';
+                  }
+              })
+              .catch(function () {
+                  fb.textContent = 'Could not save email — check your connection.';
+                  fb.style.color = '#b32d2e';
+              });
+        });
+    }
+
     function initSubmit(scope, methodCtl) {
         var cta = document.querySelector('[data-mgk-pay-cta]');
         if (!cta) { return; }
@@ -127,6 +180,20 @@
             track('pay_submit', { method: methodCtl.current(), amount: cta.getAttribute('data-amount') });
 
             var bookingId = parseInt(cta.getAttribute('data-booking-id') || '0', 10);
+
+            // A real booking needs a valid email — that's how the parent account +
+            // passwordless sign-in link get created (FR-BOOK-07). Nudge, don't pay.
+            var emailEl = payEmailInput();
+            var email = emailEl ? (emailEl.value || '').trim() : '';
+            if (bookingId && emailEl && !isValidEmail(email)) {
+                var efb = emailFeedback(emailEl);
+                efb.textContent = 'Please enter a valid email so we can send your booking + sign-in link.';
+                efb.style.color = '#b32d2e';
+                if (emailEl.scrollIntoView) { emailEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); }
+                emailEl.focus();
+                track('pay_email_required', {});
+                return;
+            }
 
             // No real booking (demo/preview) → keep the demo state machine.
             if (!bookingId || !window.fetch) {
@@ -148,7 +215,7 @@
             fetch(restUrl + 'booking/' + bookingId + '/create-stripe-checkout', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
-                body: JSON.stringify({ method: methodCtl.current(), return_url: window.location.origin + '/trial-confirmed/' })
+                body: JSON.stringify({ method: methodCtl.current(), return_url: window.location.origin + '/trial-confirmed/', email: email })
             }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, status: r.status, body: j }; }); })
               .then(function (res) {
                   if (!res.ok || !res.body || !res.body.checkout_url) { return Promise.reject(res); }
@@ -205,6 +272,107 @@
           .catch(function () { /* leave placeholder on failure */ });
     }
 
+    /* ── Voucher: apply / replace / remove → re-quote booking ─────────────
+       The server re-quotes and persists the new price to the booking, so the
+       Stripe charge equals what we render here. One voucher per order: applying
+       a code replaces any previous one; the button toggles to "Remove". */
+    function initVoucher() {
+        var box = document.querySelector('[data-mgk-voucher]');
+        if (!box || !window.fetch) { return; }
+        var summary = box.closest('[data-booking-id]') || document.querySelector('[data-booking-id]');
+        var bookingId = parseInt((summary && summary.getAttribute('data-booking-id')) || '0', 10);
+        if (!bookingId) { return; } // preview / no real booking
+
+        var input = box.querySelector('[data-mgk-voucher-code]');
+        var btn   = box.querySelector('[data-mgk-voucher-apply]');
+        var fb    = box.querySelector('[data-mgk-voucher-fb]');
+        if (!input || !btn) { return; }
+
+        function setFb(msg, ok) {
+            if (!fb) { return; }
+            fb.hidden = !msg;
+            fb.innerHTML = msg || '';
+            fb.style.color = ok ? '#1a7f37' : '#b32d2e';
+        }
+        function applied() { return btn.textContent.trim().toLowerCase() === 'remove'; }
+
+        function renderRows(rows) {
+            var host = document.querySelector('[data-mgk-bd-rows]');
+            if (!host) { return; }
+            host.innerHTML = (rows || []).map(function (r) {
+                var cls = 'mgk-bk-bd-row' + (r.accent ? ' is-accent' : '') + (r.strong ? ' is-strong' : '');
+                return '<div class="' + cls + '"><span class="mgk-bk-bd-label"></span>' +
+                       '<span class="mgk-bk-bd-value"></span></div>';
+            }).join('');
+            // Fill text via textContent to avoid injection.
+            var nodes = host.querySelectorAll('.mgk-bk-bd-row');
+            (rows || []).forEach(function (r, i) {
+                if (!nodes[i]) { return; }
+                nodes[i].querySelector('.mgk-bk-bd-label').textContent = r.label || '';
+                nodes[i].querySelector('.mgk-bk-bd-value').textContent = r.value || '';
+            });
+        }
+        function syncPayCtaAmount(total, totalStr) {
+            var cta = document.querySelector('[data-mgk-pay-cta]');
+            if (!cta) { return; }
+            if (typeof total !== 'undefined' && total !== null && total !== '') {
+                cta.setAttribute('data-amount', parseFloat(total).toFixed(2));
+            }
+            var label = cta.querySelector('[data-pay-cta-label]');
+            if (!label || !totalStr) { return; }
+            var active = document.querySelector('[data-pay-method].is-active');
+            var method = active ? active.getAttribute('data-pay-method') : 'paynow';
+            var via = method === 'card' ? 'Card' : 'PayNow';
+            label.textContent = 'Pay ' + totalStr + ' with ' + via + ' →';
+        }
+
+        btn.addEventListener('click', function () {
+            var removing = applied();
+            var code = removing ? '' : (input.value || '').trim().toUpperCase();
+            if (!removing && !code) { setFb('Enter a voucher code', false); return; }
+
+            btn.disabled = true;
+            setFb('Checking…', true);
+            fetch(restUrl + 'booking/' + bookingId + '/apply-voucher', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'X-WP-Nonce': nonce },
+                body: JSON.stringify({ code: code })
+            }).then(function (r) { return r.json().then(function (j) { return { ok: r.ok, body: j }; }); })
+              .then(function (res) {
+                  btn.disabled = false;
+                  var b = res.body || {};
+                  if (!res.ok) { setFb((b && b.message) || 'Could not apply voucher.', false); return; }
+
+                  // Update the breakdown + totals from the authoritative re-quote.
+                  renderRows(b.rows);
+                  var st = document.querySelector('[data-mgk-subtotal]');
+                  var tt = document.querySelector('[data-mgk-total]');
+                  if (st) { st.textContent = b.subtotal || st.textContent; }
+                  if (tt) { tt.textContent = b.total_str || tt.textContent; }
+                  // Keep the pay CTA's amount label (if any) in sync.
+                  var ctaAmt = document.querySelector('[data-mgk-pay-amount]');
+                  if (ctaAmt && b.total_str) { ctaAmt.textContent = b.total_str; }
+                  syncPayCtaAmount(b.total, b.total_str);
+
+                  if (code === '') {
+                      input.value = '';
+                      btn.textContent = 'Apply';
+                      setFb('Voucher removed', true);
+                      track('voucher_removed', {});
+                  } else if (b.applied) {
+                      input.value = b.applied;
+                      btn.textContent = 'Remove';
+                      setFb('✓ Voucher <strong>' + b.applied + '</strong> applied', true);
+                      track('voucher_applied', { code: b.applied });
+                  } else {
+                      btn.textContent = 'Apply';
+                      setFb(b.voucher_error || 'Voucher not applicable', false);
+                  }
+              })
+              .catch(function () { btn.disabled = false; setFb('Network error — try again.', false); });
+        });
+    }
+
     function init() {
         // Composite render wraps everything in [data-mgk-pay]; the Elementor
         // split-widget build has no shared wrapper, so fall back to the document.
@@ -218,6 +386,8 @@
         }
         initTermsGate();
         initPayNowQR();
+        initEmailCapture();
+        initVoucher();
     }
 
     if (document.readyState === 'loading') {

@@ -15,7 +15,7 @@ $a     = (array) ( $args ?? [] );
 $items = (array) ( $a['lesson'] ?? [] );
 $cal   = (array) ( $a['calendar'] ?? [] );
 
-$heading       = $a['heading']        ?? 'Your first lesson';
+$heading       = $a['heading']        ?? ( ! empty( $a['is_package'] ) ? 'Your package' : 'Your first lesson' );
 $ics_label     = $a['ics_label']      ?? '📅 Add to calendar (.ics)';
 ?>
 <section class="mgk-cf-card mgk-cf-lesson" data-event="confirm_lesson_view">
@@ -36,8 +36,10 @@ $ics_label     = $a['ics_label']      ?? '📅 Add to calendar (.ics)';
         <?php endforeach; ?>
     </ul>
 
+    <?php if ( ( $cal['enabled'] ?? true ) !== false ) : ?>
     <div class="mgk-cf-cal-row">
         <a class="mgk-cf-cal-primary" href="<?php echo esc_url( $cal['ics'] ?? '#' ); ?>"
            data-event="calendar_add_click"><?php echo esc_html( $ics_label ); ?></a>
     </div>
+    <?php endif; ?>
 </section>

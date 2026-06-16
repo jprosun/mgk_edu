@@ -264,6 +264,14 @@ function mgk_validate_request_payload( array $p ) {
     $errors = [];
     $enums  = mgk_request_enums();
 
+    // Child's name — required, ≤120 chars (matches the child entity). Trimmed.
+    $child_name = isset( $p['child_name'] ) ? trim( (string) $p['child_name'] ) : '';
+    if ( $child_name === '' ) {
+        $errors['child_name'] = 'Please enter your child’s name.';
+    } elseif ( mb_strlen( $child_name ) > 120 ) {
+        $errors['child_name'] = 'Please keep the name under 120 characters.';
+    }
+
     if ( empty( $p['child_level'] ) || ! mgk_request_enum_has( 'levels', $p['child_level'] ) ) {
         $errors['child_level'] = 'Please select your child’s level.';
     }
@@ -358,6 +366,7 @@ function mgk_request_build_payload( array $p ) {
     $phone_e164 = mgk_normalize_phone( $p['phone'] ?? '', $country );
 
     $payload = [
+        'child_name'     => sanitize_text_field( mb_substr( trim( (string) ( $p['child_name'] ?? '' ) ), 0, 120 ) ),
         'level'          => sanitize_key( $p['child_level'] ?? '' ),
         'subject'        => sanitize_key( $p['subject'] ?? '' ),
         'preferred_days' => implode( ',', $days ),
@@ -401,6 +410,21 @@ function mgk_request_create_lead( array $raw ) {
         if ( $lead_id ) {
             update_post_meta( $lead_id, 'mgk_lead_sla_due_at', $sla_due );
             update_post_meta( $lead_id, 'mgk_lead_source',     'request_match' );
+
+            // ── Option 3: a signed-in parent is ADDING a child ──
+            // Link the lead to their account and create the real mg_child now
+            // (don't wait for payment) so the dashboard shows the new child
+            // immediately. Email is theirs (locked on the form), no re-ask.
+            if ( function_exists( 'mgk_is_parent_user' ) && mgk_is_parent_user() ) {
+                $uid = get_current_user_id();
+                update_post_meta( $lead_id, 'mgk_lead_parent_user_id', $uid );
+                if ( function_exists( 'mgk_child_find_or_create' ) ) {
+                    $child_id = mgk_child_find_or_create( $uid, $payload['child_name'] ?? '', $payload['level'] ?? '' );
+                    if ( $child_id ) {
+                        update_post_meta( $lead_id, 'mgk_lead_child_id', (int) $child_id );
+                    }
+                }
+            }
 
             // Lead awaits admin review — NOT auto-advanced. captured → pending_review.
             // No parent message is sent until an admin clicks Accept (mgk_lead_accept).
@@ -501,6 +525,7 @@ add_action( 'template_redirect', function () {
 
     // Build raw payload from POST (arrays for multi-select days).
     $raw = [
+        'child_name'     => isset( $_POST['child_name'] ) ? sanitize_text_field( wp_unslash( $_POST['child_name'] ) ) : '',
         'child_level'    => isset( $_POST['child_level'] ) ? sanitize_key( wp_unslash( $_POST['child_level'] ) ) : '',
         'subject'        => isset( $_POST['subject'] ) ? sanitize_key( wp_unslash( $_POST['subject'] ) ) : '',
         'preferred_days' => isset( $_POST['preferred_days'] ) ? (array) wp_unslash( $_POST['preferred_days'] ) : [],
@@ -619,6 +644,7 @@ add_shortcode( 'mgk_request_fields', function ( $atts ) {
 
 if ( function_exists( 'mgk_request_field_html' ) ) {
     $mgk_field_shortcodes = [
+        'mgk_request_field_child_name' => 'child_name',
         'mgk_request_field_level'    => 'level',
         'mgk_request_field_subject'  => 'subject',
         'mgk_request_field_schedule' => 'schedule',
@@ -799,6 +825,7 @@ function mgk_rest_request_match( WP_REST_Request $req ) {
     $body = $req->get_json_params() ?: (array) $req->get_body_params();
 
     $raw = [
+        'child_name'     => sanitize_text_field( (string) ( $body['child_name'] ?? '' ) ),
         'child_level'    => sanitize_key( $body['child_level'] ?? '' ),
         'subject'        => sanitize_key( $body['subject'] ?? '' ),
         'preferred_days' => (array) ( $body['preferred_days'] ?? [] ),

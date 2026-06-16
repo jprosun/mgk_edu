@@ -200,6 +200,18 @@
                 if (!btn || btn.disabled || btn.classList.contains('is-disabled') || btn.classList.contains('is-selected')) { return; }
                 mgkSelectSlot(btn.getAttribute('data-slot-id'), btn, btn.getAttribute('data-slot-label'));
             });
+
+            // The server pre-selects the first available slot (and shows a running
+            // hold countdown), but no hold exists until a click. Create the hold for
+            // that pre-selected slot on load so the countdown is real and "Confirm &
+            // pay" carries a real booking id (not a demo fallback). Only for real
+            // engine slots; the legacy/demo path is left visual-only.
+            var preSel = picker.querySelector('.mgk-bk-slot.is-selected');
+            var cta = document.querySelector('[data-confirm-cta]');
+            var alreadyHeld = cta && (cta.getAttribute('href') || '').indexOf('booking=') > -1;
+            if (preSel && !alreadyHeld && parseSlotKey(preSel.getAttribute('data-slot-id'))) {
+                mgkHoldSlot(preSel.getAttribute('data-slot-id'), preSel, preSel.getAttribute('data-slot-label'));
+            }
         }
 
         // Day select — each day has its own real slot set, so navigate with

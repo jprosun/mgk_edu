@@ -242,6 +242,7 @@ body.mgk-page-parent-dashboard .mgk-parent-empty-dashboard__secondary:hover {
 }
 
 .mgk-parent-dashboard-switcher button,
+.mgk-parent-dashboard-switcher__child,
 .mgk-parent-dashboard-switcher__add {
     min-height: 33px;
     border: 1px solid #9c9c9c;
@@ -258,13 +259,15 @@ body.mgk-page-parent-dashboard .mgk-parent-empty-dashboard__secondary:hover {
     border-radius: 0;
 }
 
-.mgk-parent-dashboard-switcher button.is-active {
+.mgk-parent-dashboard-switcher button.is-active,
+.mgk-parent-dashboard-switcher__child.is-active {
     background: #202020;
     color: #fff;
     border-color: #202020;
 }
 
-.mgk-parent-dashboard-switcher button em {
+.mgk-parent-dashboard-switcher button em,
+.mgk-parent-dashboard-switcher__child em {
     font-style: normal;
     font-weight: 800;
 }

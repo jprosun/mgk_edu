@@ -13,44 +13,89 @@ function mgk_msg_shortcode_atts( $defaults, $atts ) {
     return shortcode_atts( array_merge( [ 'hidden' => '' ], $defaults ), $atts );
 }
 
+/** Real threads for a parent: one per (tutor, child) from enrolments + bookings. */
 function mgk_get_parent_message_threads( $parent_id ) {
-    return [
-        [
-            'id' => 'demo-ms-lee', 'title' => 'Ms Lee · Emma',
-            'preview' => 'HOMEWORK PHOTO ATTACHED...', 'unread' => '+2',
-            'active' => true, 'dark_avatar' => false,
-        ],
-        [
-            'id' => 'demo-mr-wong', 'title' => 'Mr Wong · Ryan',
-            'preview' => 'SEE YOU THURSDAY 7PM ✓✓', 'unread' => '',
-            'active' => false, 'dark_avatar' => false,
-        ],
-        [
-            'id' => 'demo-support', 'title' => 'Agency Support',
-            'preview' => 'RE: RESCHEDULE POLICY...', 'unread' => '',
-            'active' => false, 'dark_avatar' => true,
-        ],
-    ];
+    $parent_id = (int) $parent_id;
+    if ( ! $parent_id || ! function_exists( 'mgk_thread_key_for' ) ) {
+        // Preview only (Elementor editor / logged out).
+        if ( function_exists( 'mgk_dashboard_is_preview' ) && mgk_dashboard_is_preview() ) {
+            return [ [ 'id' => 'demo-ms-lee', 'title' => 'Ms Lee · Emma', 'preview' => 'HOMEWORK PHOTO ATTACHED...', 'unread' => '+2', 'active' => true, 'dark_avatar' => false ] ];
+        }
+        return [];
+    }
+
+    $pairs = []; // thread_key => [tutor, child]
+    if ( post_type_exists( 'mg_enrolment' ) ) {
+        foreach ( get_posts( [ 'post_type' => 'mg_enrolment', 'numberposts' => 50, 'fields' => 'ids', 'meta_query' => [ [ 'key' => 'mgk_enr_parent_user_id', 'value' => $parent_id ] ] ] ) as $eid ) {
+            $tid = (int) get_post_meta( $eid, 'mgk_enr_tutor_id', true );
+            $cid = (int) get_post_meta( $eid, 'mgk_enr_child_id', true );
+            $k   = $tid && $cid ? mgk_thread_key_for( $cid, $tid ) : '';
+            if ( $k ) $pairs[ $k ] = [ 'tutor' => $tid, 'child' => $cid ];
+        }
+    }
+    if ( function_exists( 'mgk_booking_table' ) && function_exists( 'mgk_parent_children' ) ) {
+        global $wpdb;
+        $bt   = mgk_booking_table( 'bookings' );
+        $kids = mgk_parent_children( $parent_id );
+        $rows = $wpdb->get_results( $wpdb->prepare( "SELECT tutor_post_id, student_name FROM {$bt} WHERE parent_user_id = %d AND status IN ('CONFIRMED','COMPLETED')", $parent_id ), ARRAY_A );
+        foreach ( (array) $rows as $r ) {
+            $tid = (int) $r['tutor_post_id']; $cid = 0;
+            foreach ( $kids as $c ) { if ( ( get_post_meta( $c->ID, 'mgk_child_full_name', true ) ?: get_the_title( $c ) ) === $r['student_name'] ) { $cid = (int) $c->ID; break; } }
+            $k = $tid && $cid ? mgk_thread_key_for( $cid, $tid ) : '';
+            if ( $k && ! isset( $pairs[ $k ] ) ) $pairs[ $k ] = [ 'tutor' => $tid, 'child' => $cid ];
+        }
+    }
+
+    $active = isset( $_GET['thread'] ) ? sanitize_text_field( wp_unslash( $_GET['thread'] ) ) : '';
+    $out = []; $first = true;
+    foreach ( $pairs as $key => $p ) {
+        $tutor  = get_post( $p['tutor'] );
+        $cname  = get_post_meta( $p['child'], 'mgk_child_full_name', true ) ?: get_the_title( $p['child'] );
+        $last   = function_exists( 'mgk_msg_last' ) ? mgk_msg_last( $key ) : null;
+        $unread = function_exists( 'mgk_msg_unread' ) ? mgk_msg_unread( $key ) : 0;
+        $out[] = [
+            'id'          => $key,
+            'title'       => ( $tutor ? $tutor->post_title : 'Tutor' ) . ' · ' . $cname,
+            'preview'     => $last ? wp_trim_words( (string) $last['body'], 9, '…' ) : 'No messages yet',
+            'unread'      => $unread ? ( '+' . $unread ) : '',
+            'active'      => $active ? ( $active === $key ) : $first,
+            'dark_avatar' => false,
+        ];
+        $first = false;
+    }
+    return $out;
 }
 
 function mgk_get_active_message_thread( $thread_id = null ) {
+    $thread_id = (string) ( $thread_id ?: '' );
     return [
-        'id' => $thread_id ?: 'demo-ms-lee',
-        'participant' => mgk_get_thread_participant( $thread_id ?: 'demo-ms-lee' ),
-        'messages' => mgk_get_thread_messages( $thread_id ?: 'demo-ms-lee' ),
-        'report_url' => mgk_get_report_thread_url( $thread_id ?: 'demo-ms-lee' ),
+        'id'          => $thread_id,
+        'participant' => mgk_get_thread_participant( $thread_id ),
+        'messages'    => mgk_get_thread_messages( $thread_id ),
+        'report_url'  => mgk_get_report_thread_url( $thread_id ),
     ];
 }
 
 function mgk_get_thread_unread_count( $thread_id ) {
-    return $thread_id === 'demo-ms-lee' ? 2 : 0;
+    return function_exists( 'mgk_msg_unread' ) ? mgk_msg_unread( $thread_id ) : 0;
 }
 
 function mgk_get_thread_participant( $thread_id ) {
+    $p = function_exists( 'mgk_thread_parse' ) ? mgk_thread_parse( $thread_id ) : null;
+    if ( ! $p ) {
+        return [ 'name' => 'Ms Lee Yi L', 'status' => '● ONLINE · RE: EMMA (P5 MATH)', 'type' => 'tutor' ];
+    }
+    $tutor = get_post( $p['tutor'] );
+    $cname = get_post_meta( $p['child'], 'mgk_child_full_name', true ) ?: get_the_title( $p['child'] );
+    $subj  = '';
+    if ( function_exists( 'mgk_enrolment_for_child' ) ) {
+        $enr = mgk_enrolment_for_child( $p['child'] );
+        if ( $enr ) $subj = (string) get_post_meta( $enr, 'mgk_enr_subject', true );
+    }
     return [
-        'name' => 'Ms Lee Yi L',
-        'status' => '● ONLINE · RE: EMMA (P5 MATH)',
-        'type' => 'tutor',
+        'name'   => $tutor ? $tutor->post_title : 'Tutor',
+        'status' => 'RE: ' . strtoupper( $cname . ( $subj ? ' (' . $subj . ')' : '' ) ),
+        'type'   => 'tutor',
     ];
 }
 
@@ -63,12 +108,26 @@ function mgk_get_report_thread_url( $thread_id ) {
 }
 
 function mgk_get_thread_messages( $thread_id ) {
-    return [
-        [ 'id' => 'm1', 'kind' => 'incoming_text', 'time' => '9:02AM' ],
-        [ 'id' => 'm2', 'kind' => 'photo', 'time' => '9:03AM · PHOTO', 'file' => 'homework_p42.jpg' ],
-        [ 'id' => 'm3', 'kind' => 'lesson_ref', 'time' => '9:04AM', 'title' => 'LESSON REFERENCE', 'body' => '31 MAY · P5 MATH · FRACTIONS — VIEW LOG', 'url' => '#' ],
-        [ 'id' => 'm4', 'kind' => 'outgoing_text', 'time' => '9:10AM · ✓✓ READ' ],
-    ];
+    if ( ! function_exists( 'mgk_msg_rows' ) || ! mgk_thread_parse( $thread_id ) ) {
+        return []; // no real thread → empty conversation
+    }
+    $out = [];
+    foreach ( mgk_msg_rows( $thread_id ) as $r ) {
+        $incoming = in_array( $r['sender_role'], [ 'TUTOR', 'AGENCY' ], true );
+        $time = $r['created_at_utc'] ? gmdate( 'g:iA', strtotime( $r['created_at_utc'] . ' UTC' ) ) : '';
+        if ( ! $incoming && ! empty( $r['read_by_parent_at'] ) ) { $time .= ' · ✓✓ READ'; }
+        $kind = $incoming ? 'incoming_text' : 'outgoing_text';
+        if ( ! empty( $r['attachment'] ) ) { $kind = 'photo'; }
+        $out[] = [
+            'id'      => (int) $r['id'],
+            'kind'    => $kind,
+            'body'    => (string) $r['body'],
+            'time'    => $time,
+            'file'    => (string) $r['attachment'],
+            'flagged' => (int) $r['flagged'],
+        ];
+    }
+    return $out;
 }
 
 function mgk_get_message_attachments( $message_id ) {
@@ -80,7 +139,7 @@ function mgk_get_lesson_reference_for_message( $message_id ) {
 }
 
 function mgk_mark_thread_read( $thread_id, $parent_id ) {
-    return true;
+    return function_exists( 'mgk_msg_mark_read' ) ? mgk_msg_mark_read( $thread_id, $parent_id ) : false;
 }
 
 function mgk_mask_contact_details_in_message( $text ) {
@@ -92,22 +151,40 @@ function mgk_validate_message_payload( $payload ) {
 }
 
 function mgk_create_message( $thread_id, $sender_id, $payload ) {
-    return [ 'ok' => true ];
+    if ( ! function_exists( 'mgk_msg_insert' ) ) return [ 'ok' => false ];
+    $id = mgk_msg_insert( [
+        'thread_key'    => $thread_id,
+        'sender_role'   => strtoupper( $payload['role'] ?? 'PARENT' ),
+        'sender_user_id'=> (int) $sender_id,
+        'body'          => $payload['body'] ?? '',
+        'attachment'    => $payload['attachment'] ?? '',
+        'lesson_ref_id' => (int) ( $payload['lesson_ref_id'] ?? 0 ),
+    ] );
+    return [ 'ok' => (bool) $id, 'id' => $id ];
 }
 
 function mgk_user_can_view_thread( $user_id, $thread_id ) {
-    return true;
+    $p = function_exists( 'mgk_thread_parse' ) ? mgk_thread_parse( $thread_id ) : null;
+    if ( ! $p ) return false;
+    if ( (int) $p['parent'] === (int) $user_id ) return true;
+    return user_can( (int) $user_id, 'manage_options' ); // agency admin monitoring
 }
 
 function mgk_get_parent_messages_context() {
     $parent_id = get_current_user_id();
-    $thread_id = isset( $_GET['thread'] ) ? sanitize_key( wp_unslash( $_GET['thread'] ) ) : 'demo-ms-lee';
+    $threads   = mgk_get_parent_message_threads( $parent_id );
+    $thread_id = isset( $_GET['thread'] ) ? sanitize_text_field( wp_unslash( $_GET['thread'] ) ) : ( $threads ? (string) $threads[0]['id'] : '' );
+
+    // Viewing a thread marks its incoming messages read (NFR: live unread).
+    if ( $thread_id && $parent_id && mgk_user_can_view_thread( $parent_id, $thread_id ) ) {
+        mgk_mark_thread_read( $thread_id, $parent_id );
+    }
 
     return [
-        'parent_id' => $parent_id,
-        'threads' => mgk_get_parent_message_threads( $parent_id ),
+        'parent_id'     => $parent_id,
+        'threads'       => $threads,
         'active_thread' => mgk_get_active_message_thread( $thread_id ),
-        'compose' => mgk_get_message_compose_context( $thread_id ),
+        'compose'       => mgk_get_message_compose_context( $thread_id ),
     ];
 }
 

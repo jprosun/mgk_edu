@@ -27,7 +27,7 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
-if ( ! defined( 'MGK_BOOKING_SCHEMA_VERSION' ) ) define( 'MGK_BOOKING_SCHEMA_VERSION', '0.5.0' );
+if ( ! defined( 'MGK_BOOKING_SCHEMA_VERSION' ) ) define( 'MGK_BOOKING_SCHEMA_VERSION', '0.7.0' );
 
 /** Table name helpers — single place that owns the real table names. */
 function mgk_booking_table( $key ) {
@@ -64,6 +64,7 @@ function mgk_booking_install_schema() {
 		tutor_post_id BIGINT UNSIGNED NOT NULL,
 		lead_id BIGINT UNSIGNED NULL,
 		parent_user_id BIGINT UNSIGNED NULL,
+		child_id BIGINT UNSIGNED NULL,
 		student_name VARCHAR(190) NULL,
 		subject VARCHAR(190) NULL,
 		lesson_type VARCHAR(40) NOT NULL DEFAULT 'TRIAL',
@@ -74,6 +75,9 @@ function mgk_booking_install_schema() {
 		status VARCHAR(40) NOT NULL DEFAULT 'HELD',
 		payment_status VARCHAR(40) NOT NULL DEFAULT 'PENDING',
 		price_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+		base_amount DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+		discount_applied LONGTEXT NULL,
+		voucher_code VARCHAR(64) NULL,
 		currency VARCHAR(10) NOT NULL DEFAULT 'SGD',
 		idempotency_key VARCHAR(190) NULL,
 		hold_expires_at_utc DATETIME NULL,

@@ -1,10 +1,10 @@
 <?php
 /**
- * Editable commercial site settings for MGK templates.
+ * Operational site settings for MGK templates.
  *
- * This file intentionally uses native WordPress theme mods instead of page
- * PHP edits, so a site owner can change brand, copy, images, colors, and CTAs
- * from WP Admin or the Customizer.
+ * Page copy, page layout, and marketing content are edited in Elementor. This
+ * settings screen is intentionally limited to site identity, brand tokens, and
+ * booking/payment configuration.
  */
 
 if ( ! defined( 'ABSPATH' ) ) exit;
@@ -141,6 +141,10 @@ function mgk_site_setting_defaults() {
         'paynow_uen'           => '',
         'paynow_payee'         => '',
         'pay_stripe_enabled'   => '0',
+        'stripe_connect_client_id' => '',
+        'stripe_connect_account_id'=> '',
+        'stripe_connect_livemode'  => '0',
+        'stripe_connect_connected_at' => '',
         'stripe_publishable'   => '',
         'stripe_secret'        => '',
         'stripe_webhook_secret'=> '',
@@ -346,139 +350,29 @@ add_action( 'wp_head', function () {
 
 function mgk_site_settings_groups() {
     return [
-        'Brand and Header' => [
+        'Site Identity' => [
             'logo_image_id' => [ 'Logo image', 'image' ],
             'logo_text' => [ 'Logo text fallback', 'text' ],
             'phone' => [ 'Phone', 'text' ],
             'email' => [ 'Email', 'text' ],
-            'region_label' => [ 'Region/language label', 'text' ],
-            'utility_tutor_label' => [ 'Tutor link label', 'text' ],
-            'utility_agency_label' => [ 'Agency link label', 'text' ],
-            'header_signin_label' => [ 'Sign in button', 'text' ],
-            'header_primary_label' => [ 'Primary header CTA', 'text' ],
+        ],
+        'Brand Tokens' => [
             'accent_color' => [ 'Accent color', 'color' ],
             'dark_color' => [ 'Text/dark color', 'color' ],
             'muted_color' => [ 'Muted text color', 'color' ],
-        ],
-        'Homepage Layout' => [
-            'show_live_feed' => [ 'Show live feed', 'checkbox' ],
-            'show_steps' => [ 'Show steps section', 'checkbox' ],
-            'show_subjects' => [ 'Show subjects section', 'checkbox' ],
-            'show_tutors' => [ 'Show tutors section', 'checkbox' ],
-            'show_why' => [ 'Show why section', 'checkbox' ],
-            'show_spotlight' => [ 'Show spotlight section', 'checkbox' ],
-            'show_results' => [ 'Show results section', 'checkbox' ],
-            'show_reviews' => [ 'Show reviews section', 'checkbox' ],
-            'show_faq' => [ 'Show FAQ section', 'checkbox' ],
-            'show_pricing' => [ 'Show pricing section', 'checkbox' ],
-            'show_press' => [ 'Show press section', 'checkbox' ],
-            'show_final_cta' => [ 'Show final CTA section', 'checkbox' ],
-            'show_newsletter' => [ 'Show newsletter section', 'checkbox' ],
-        ],
-        'Homepage Hero' => [
-            'hero_eyebrow' => [ 'Eyebrow', 'text' ],
-            'hero_title_before' => [ 'Title before highlight', 'text' ],
-            'hero_title_highlight' => [ 'Title highlight', 'text' ],
-            'hero_title_after' => [ 'Title after highlight', 'text' ],
-            'hero_search_button' => [ 'Search button text', 'text' ],
-            'hero_proof' => [ 'Hero proof line', 'text' ],
-            'hero_media_image_id' => [ 'Hero image/video thumbnail', 'image' ],
-            'hero_media_label' => [ 'Hero media fallback label', 'text' ],
-            'hero_media_button' => [ 'Hero media button', 'text' ],
-        ],
-        'Homepage Sections' => [
-            'steps_heading' => [ 'Steps heading', 'text' ],
-            'steps_body' => [ 'Steps body', 'text' ],
-            'subjects_heading' => [ 'Subjects heading', 'text' ],
-            'tutors_heading' => [ 'Tutors heading', 'text' ],
-            'tutors_body' => [ 'Tutors body', 'text' ],
-            'tutor_filters' => [ 'Tutor filters, comma-separated', 'textarea' ],
-            'why_heading' => [ 'Why heading', 'text' ],
-            'why_body' => [ 'Why body', 'text' ],
-            'results_heading' => [ 'Results heading', 'text' ],
-            'reviews_heading' => [ 'Reviews heading', 'text' ],
-            'reviews_body' => [ 'Reviews body', 'text' ],
-            'faq_heading' => [ 'FAQ heading', 'text' ],
-            'press_label' => [ 'Press label', 'text' ],
-            'press_names' => [ 'Press names, comma-separated', 'textarea' ],
-        ],
-        'Steps and Trust Cards' => [
-            'stat_1_value' => [ 'Stat 1 value', 'text' ],
-            'stat_1_label' => [ 'Stat 1 label', 'text' ],
-            'stat_2_value' => [ 'Stat 2 value', 'text' ],
-            'stat_2_label' => [ 'Stat 2 label', 'text' ],
-            'stat_3_value' => [ 'Stat 3 value', 'text' ],
-            'stat_3_label' => [ 'Stat 3 label', 'text' ],
-            'stat_4_value' => [ 'Stat 4 value', 'text' ],
-            'stat_4_label' => [ 'Stat 4 label', 'text' ],
-            'live_1' => [ 'Live feed item 1', 'text' ],
-            'live_2' => [ 'Live feed item 2', 'text' ],
-            'live_3' => [ 'Live feed item 3', 'text' ],
-            'step_1_title' => [ 'Step 1 title', 'text' ],
-            'step_1_body' => [ 'Step 1 body', 'text' ],
-            'step_2_title' => [ 'Step 2 title', 'text' ],
-            'step_2_body' => [ 'Step 2 body', 'text' ],
-            'step_3_title' => [ 'Step 3 title', 'text' ],
-            'step_3_body' => [ 'Step 3 body', 'text' ],
-            'step_4_title' => [ 'Step 4 title', 'text' ],
-            'step_4_body' => [ 'Step 4 body', 'text' ],
-        ],
-        'Why Cards' => [
-            'why_1_title' => [ 'Why card 1 title', 'text' ],
-            'why_1_body' => [ 'Why card 1 body', 'textarea' ],
-            'why_2_title' => [ 'Why card 2 title', 'text' ],
-            'why_2_body' => [ 'Why card 2 body', 'textarea' ],
-            'why_3_title' => [ 'Why card 3 title', 'text' ],
-            'why_3_body' => [ 'Why card 3 body', 'textarea' ],
-            'why_4_title' => [ 'Why card 4 title', 'text' ],
-            'why_4_body' => [ 'Why card 4 body', 'textarea' ],
-            'why_5_title' => [ 'Why card 5 title', 'text' ],
-            'why_5_body' => [ 'Why card 5 body', 'textarea' ],
-            'why_6_title' => [ 'Why card 6 title', 'text' ],
-            'why_6_body' => [ 'Why card 6 body', 'textarea' ],
-        ],
-        'Spotlight and Pricing' => [
-            'spotlight_image_id' => [ 'Spotlight image/video', 'image' ],
-            'spotlight_label' => [ 'Spotlight fallback label', 'text' ],
-            'spotlight_eyebrow' => [ 'Spotlight eyebrow', 'text' ],
-            'spotlight_name' => [ 'Spotlight name', 'text' ],
-            'spotlight_meta' => [ 'Spotlight meta', 'text' ],
-            'spotlight_stat_1' => [ 'Spotlight stat 1, value|label', 'text' ],
-            'spotlight_stat_2' => [ 'Spotlight stat 2, value|label', 'text' ],
-            'spotlight_stat_3' => [ 'Spotlight stat 3, value|label', 'text' ],
-            'spotlight_profile_label' => [ 'Profile CTA label', 'text' ],
-            'spotlight_trial_label' => [ 'Trial CTA label', 'text' ],
-            'pricing_heading' => [ 'Pricing heading', 'text' ],
-            'pricing_body' => [ 'Pricing body', 'text' ],
-            'pricing_lines' => [ 'Pricing bullets, one per line', 'textarea' ],
-            'pricing_cta' => [ 'Pricing CTA label', 'text' ],
-            'calculator_title' => [ 'Calculator title', 'text' ],
-            'calculator_rows' => [ 'Calculator rows, one per line', 'textarea' ],
-            'calculator_result' => [ 'Calculator result', 'text' ],
-            'calculator_note' => [ 'Calculator note', 'text' ],
         ],
         'Payments (Booking)' => [
             'pay_paynow_enabled'    => [ 'Enable PayNow QR', 'checkbox' ],
             'paynow_uen'            => [ 'PayNow UEN (company)', 'text' ],
             'paynow_payee'          => [ 'PayNow payee/merchant name', 'text' ],
             'pay_stripe_enabled'    => [ 'Enable Card (Stripe)', 'checkbox' ],
-            'stripe_publishable'    => [ 'Stripe publishable key (pk_…)', 'text' ],
-            'stripe_secret'         => [ 'Stripe secret key (sk_…)', 'secret' ],
-            'stripe_webhook_secret' => [ 'Stripe webhook secret (whsec_…)', 'secret' ],
         ],
-        'Final CTA, Newsletter, Footer' => [
-            'final_cta_heading' => [ 'Final CTA heading', 'text' ],
-            'final_cta_body' => [ 'Final CTA body', 'text' ],
-            'final_cta_primary' => [ 'Final CTA primary button', 'text' ],
-            'final_cta_secondary' => [ 'Final CTA secondary button', 'text' ],
-            'mobile_sticky_label' => [ 'Mobile sticky CTA label', 'text' ],
-            'newsletter_heading' => [ 'Newsletter heading', 'text' ],
-            'newsletter_body' => [ 'Newsletter body', 'text' ],
-            'newsletter_button' => [ 'Newsletter button', 'text' ],
-            'footer_intro' => [ 'Footer intro', 'textarea' ],
-            'footer_registration' => [ 'Footer registration line', 'text' ],
-            'footer_copyright' => [ 'Footer copyright name', 'text' ],
-            'footer_regions' => [ 'Footer regions', 'text' ],
+        'Stripe Platform (Dev)' => [
+            'stripe_connect_client_id' => [ 'Stripe Connect client ID (ca_…)', 'text' ],
+            'stripe_publishable'    => [ 'Platform publishable key (pk_…)', 'text' ],
+            'stripe_secret'         => [ 'Platform secret key (sk_…)', 'secret' ],
+            'stripe_webhook_secret' => [ 'Stripe webhook secret (whsec_…)', 'secret' ],
+            'stripe_connect_account_id' => [ 'Connected account ID (dev override)', 'text' ],
         ],
     ];
 }
@@ -518,17 +412,105 @@ add_action( 'admin_enqueue_scripts', function ( $hook ) {
     " );
 } );
 
+/**
+ * Agency-facing "how to take real payments" guide, shown above the Payments
+ * fields. The money flow is 3-tier (see project-payment-tier-model): the PARENT
+ * pays → the AGENCY's own Stripe/bank receives it → Margick never touches it.
+ * So each agency pastes THEIR OWN Stripe keys here. The panel also surfaces the
+ * live MOCK-vs-LIVE status and the exact webhook URL to register in Stripe.
+ */
+function mgk_payments_setup_panel_html() {
+    $cfg         = function_exists( 'mgk_payment_config' ) ? mgk_payment_config() : [];
+    $stripe_live = ! empty( $cfg['stripe_live'] );    // a secret key is set
+    $stripe_on   = ! empty( $cfg['stripe_active'] );   // "Enable Card" ticked
+    $paynow_on   = ! empty( $cfg['paynow_active'] );   // enabled + valid UEN
+    $secret      = function_exists( 'mgk_stripe_secret_key' ) ? mgk_stripe_secret_key() : '';
+    $wh_set      = function_exists( 'mgk_stripe_webhook_secret' ) ? mgk_stripe_webhook_secret() !== '' : false;
+    $is_test_key = strpos( $secret, 'sk_test_' ) === 0;
+    $webhook_url = rest_url( 'mgk/v1/stripe/webhook' );
+    $dash_link   = $is_test_key ? 'https://dashboard.stripe.com/test/apikeys' : 'https://dashboard.stripe.com/apikeys';
+
+    // Overall money state (direct-key model — agency uses their OWN Stripe account).
+    if ( $stripe_on && $stripe_live && $wh_set ) {
+        $label = $is_test_key ? '● Card payments LIVE (test keys)' : '● Card payments LIVE';
+        $state = [ '#067a4b', '#e6f6ee', $label, 'Parents pay by card on Stripe Checkout. Money lands in your own Stripe balance and pays out to your bank. Bookings confirm automatically.' ];
+    } elseif ( $stripe_on && $stripe_live ) {
+        $state = [ '#b26a00', '#fff4e0', '● Keys set — finishing webhook', 'Your Stripe key is saved. The confirmation webhook auto-configures on a public domain; on localhost it stays in test/manual mode.' ];
+    } elseif ( $stripe_on ) {
+        $state = [ '#b26a00', '#fff4e0', '● Card mock mode — paste your Stripe keys', 'Card flow runs as a local mock until you paste your two Stripe keys below.' ];
+    } else {
+        $state = [ '#555', '#eee', '○ Card payments are OFF', 'Tick “Enable Card (Stripe)” below, then paste your two Stripe keys.' ];
+    }
+
+    // One-time flash from the auto webhook setup after a key save.
+    $flash = get_transient( 'mgk_stripe_webhook_flash' );
+    if ( $flash ) delete_transient( 'mgk_stripe_webhook_flash' );
+    $flash_colors = [ 'success' => [ '#067a4b', '#e6f6ee' ], 'warning' => [ '#b26a00', '#fff4e0' ], 'info' => [ '#1d6fb8', '#e7f1fb' ] ];
+
+    ob_start();
+    ?>
+    <div style="border:1px solid #c3c4c7;border-left:4px solid <?php echo esc_attr( $state[0] ); ?>;background:#fff;padding:14px 18px;margin:6px 0 18px;max-width:880px;border-radius:4px;">
+        <div style="display:inline-block;background:<?php echo esc_attr( $state[1] ); ?>;color:<?php echo esc_attr( $state[0] ); ?>;font-weight:700;padding:3px 10px;border-radius:12px;font-size:12px;"><?php echo esc_html( $state[2] ); ?></div>
+        <span style="margin-left:10px;font-size:12px;color:#555;">
+            PayNow: <strong style="color:<?php echo $paynow_on ? '#067a4b' : '#888'; ?>;"><?php echo $paynow_on ? 'active' : 'off'; ?></strong>
+        </span>
+        <p style="margin:8px 0 14px;color:#333;"><?php echo wp_kses_post( $state[3] ); ?></p>
+
+        <?php if ( $flash && isset( $flash_colors[ $flash['type'] ] ) ) :
+            [ $fc, $fb ] = $flash_colors[ $flash['type'] ]; ?>
+            <p style="margin:0 0 14px;padding:8px 12px;border-radius:4px;background:<?php echo esc_attr( $fb ); ?>;color:<?php echo esc_attr( $fc ); ?>;font-size:13px;"><?php echo esc_html( $flash['msg'] ); ?></p>
+        <?php endif; ?>
+
+        <p style="margin:0 0 8px;font-weight:600;">Accept cards in 2 steps</p>
+        <ol style="margin:0 0 14px 18px;color:#333;font-size:13px;line-height:1.7;">
+            <li><strong>Create your Stripe account</strong> and add your company bank for payouts at <a href="https://dashboard.stripe.com/register" target="_blank" rel="noopener">dashboard.stripe.com</a>. Stripe handles the card details and your business verification — it never touches this website.</li>
+            <li><strong>Copy your two keys</strong> (<code>pk_…</code> Publishable + <code>sk_…</code> Secret) from <a href="<?php echo esc_url( $dash_link ); ?>" target="_blank" rel="noopener">Stripe → Developers → API keys</a>, paste them in the fields below, tick <em>Enable Card</em>, and Save.</li>
+        </ol>
+        <p style="margin:0 0 14px;color:#067a4b;font-size:13px;">✓ That’s it — the payment confirmation webhook is created automatically when you save your secret key. No webhook screen, no extra tools to install.</p>
+
+        <details style="margin:0 0 12px;">
+            <summary style="cursor:pointer;font-size:12px;color:#666;">Advanced / manual webhook URL</summary>
+            <p style="margin:8px 0 6px;color:#666;font-size:12px;">Only if auto-setup can’t run (e.g. a staging URL Stripe can’t reach). Add this URL under Stripe → Developers → Webhooks, subscribe to the four <code>checkout.session</code>/<code>payment_intent</code> events, then paste the <code>whsec_…</code> into the field below.</p>
+            <div style="display:flex;gap:6px;align-items:center;">
+                <input type="text" readonly value="<?php echo esc_attr( $webhook_url ); ?>" onclick="this.select()" style="flex:1;max-width:560px;font-family:monospace;font-size:12px;padding:5px 8px;background:#f6f7f7;border:1px solid #c3c4c7;border-radius:3px;">
+                <button type="button" class="button button-small" onclick="navigator.clipboard&amp;&amp;navigator.clipboard.writeText('<?php echo esc_js( $webhook_url ); ?>');this.textContent='Copied';">Copy</button>
+            </div>
+            <p style="margin:8px 0 0;font-size:12px;color:<?php echo $wh_set ? '#067a4b' : '#888'; ?>;">Webhook signing secret: <strong><?php echo $wh_set ? 'configured ✓' : 'not set yet'; ?></strong></p>
+        </details>
+
+        <p style="margin:0 0 6px;font-weight:600;">🇸🇬 PayNow — simplest, no Stripe needed</p>
+        <p style="margin:0;color:#444;font-size:13px;">Prefer bank transfer only? Just enter your company <strong>UEN</strong> + payee name below and tick <em>Enable PayNow QR</em> — no Stripe account at all. Parents scan the QR and transfer straight into your company account. Note: PayNow has <strong>no automatic confirmation</strong> — mark those bookings paid under <em>Bookings</em> once the transfer lands.</p>
+    </div>
+    <?php
+    return ob_get_clean();
+}
+
 function mgk_site_settings_page() {
     if ( ! current_user_can( 'manage_options' ) ) return;
+    $stripe_notice = isset( $_GET['stripe_connect'] ) ? sanitize_key( wp_unslash( $_GET['stripe_connect'] ) ) : '';
+    $stripe_notices = [
+        'connected'      => [ 'success', 'Stripe account connected.' ],
+        'disconnected'   => [ 'success', 'Stripe account disconnected.' ],
+        'missing_config' => [ 'error', 'Add the Stripe Connect client ID and platform secret key first.' ],
+        'bad_state'      => [ 'error', 'Stripe connect session expired. Please try again.' ],
+        'denied'         => [ 'error', 'Stripe connection was cancelled.' ],
+        'missing_code'   => [ 'error', 'Stripe did not return an authorization code.' ],
+        'token_error'    => [ 'error', 'Stripe OAuth token exchange failed.' ],
+        'bad_account'    => [ 'error', 'Stripe returned an invalid connected account.' ],
+    ];
     ?>
     <div class="wrap">
         <h1>MGK Site Settings</h1>
-        <p>Use this page to edit the commercial-facing website without touching PHP templates.</p>
+        <p>Configure site identity, brand tokens, and payment settings. Edit page content and layout in Elementor.</p>
+        <?php if ( $stripe_notice && isset( $stripe_notices[ $stripe_notice ] ) ) : ?>
+            <div class="notice notice-<?php echo esc_attr( $stripe_notices[ $stripe_notice ][0] ); ?>"><p><?php echo esc_html( $stripe_notices[ $stripe_notice ][1] ); ?></p></div>
+        <?php endif; ?>
         <form method="post" action="<?php echo esc_url( admin_url( 'admin-post.php' ) ); ?>">
             <input type="hidden" name="action" value="mgk_save_site_settings">
             <?php wp_nonce_field( 'mgk_save_site_settings' ); ?>
             <?php foreach ( mgk_site_settings_groups() as $group => $fields ) : ?>
                 <h2><?php echo esc_html( $group ); ?></h2>
+                <?php if ( $group === 'Payments (Booking)' ) { echo mgk_payments_setup_panel_html(); } ?>
                 <table class="form-table" role="presentation">
                     <tbody>
                     <?php foreach ( $fields as $key => $field ) : ?>
@@ -599,10 +581,19 @@ add_action( 'admin_post_mgk_save_site_settings', function () {
             }
             $value = sanitize_text_field( $raw );
             set_theme_mod( 'mgk_' . $key, $value );
+            // A freshly pasted/rotated secret key triggers automatic webhook setup.
+            if ( $key === 'stripe_secret' ) {
+                $mgk_stripe_key_changed = true;
+            }
             continue;
         }
         if ( $key === 'paynow_uen' ) {
             $value = strtoupper( sanitize_text_field( $raw ) );
+            set_theme_mod( 'mgk_' . $key, $value );
+            continue;
+        }
+        if ( $key === 'stripe_connect_account_id' ) {
+            $value = preg_match( '/^acct_[A-Za-z0-9_]+$/', trim( (string) $raw ) ) ? trim( (string) $raw ) : '';
             set_theme_mod( 'mgk_' . $key, $value );
             continue;
         }
@@ -618,6 +609,23 @@ add_action( 'admin_post_mgk_save_site_settings', function () {
             $value = sanitize_text_field( $raw );
         }
         set_theme_mod( 'mgk_' . $key, $value );
+    }
+
+    // When a Stripe secret key was just pasted/rotated, auto-provision the webhook
+    // endpoint so the agency never touches Stripe's Developers → Webhooks screen.
+    if ( ! empty( $mgk_stripe_key_changed ) && function_exists( 'mgk_stripe_ensure_webhook_endpoint' ) ) {
+        $wh = mgk_stripe_ensure_webhook_endpoint();
+        if ( is_wp_error( $wh ) ) {
+            set_transient( 'mgk_stripe_webhook_flash', [
+                'type' => $wh->get_error_code() === 'mgk_local_url' ? 'info' : 'warning',
+                'msg'  => $wh->get_error_message(),
+            ], 60 );
+        } else {
+            set_transient( 'mgk_stripe_webhook_flash', [
+                'type' => 'success',
+                'msg'  => 'Stripe webhook configured automatically — card payments will confirm bookings on their own. Nothing else to set up.',
+            ], 60 );
+        }
     }
 
     wp_safe_redirect( add_query_arg( 'updated', 'true', admin_url( 'admin.php?page=mgk-site-settings' ) ) );
@@ -636,12 +644,8 @@ add_action( 'customize_register', function ( $wp_customize ) {
         'phone' => [ 'Phone', 'text' ],
         'email' => [ 'Email', 'text' ],
         'accent_color' => [ 'Accent color', 'color' ],
-        'hero_eyebrow' => [ 'Hero eyebrow', 'text' ],
-        'hero_title_before' => [ 'Hero title before highlight', 'text' ],
-        'hero_title_highlight' => [ 'Hero highlight', 'text' ],
-        'hero_title_after' => [ 'Hero title after highlight', 'text' ],
-        'hero_media_image_id' => [ 'Hero image', 'image' ],
-        'footer_intro' => [ 'Footer intro', 'textarea' ],
+        'dark_color' => [ 'Text/dark color', 'color' ],
+        'muted_color' => [ 'Muted text color', 'color' ],
     ];
 
     foreach ( $controls as $key => $control ) {
@@ -687,132 +691,5 @@ function mgk_page_enabled( $key, $default = '1', $post_id = null ) {
     return mgk_page_field( $key, $default, $post_id ) === '1';
 }
 
-function mgk_page_content_fields() {
-    return [
-        'hero_eyebrow' => [ 'Hero eyebrow', 'text' ],
-        'hero_title' => [ 'Hero title', 'text' ],
-        'hero_body' => [ 'Hero body', 'textarea' ],
-        'hero_search_placeholder' => [ 'Search placeholder', 'text' ],
-        'hero_search_button' => [ 'Search button', 'text' ],
-        'cta_title' => [ 'Final CTA title', 'text' ],
-        'cta_body' => [ 'Final CTA body', 'textarea' ],
-        'cta_primary_label' => [ 'Primary CTA label', 'text' ],
-        'cta_secondary_label' => [ 'Secondary CTA label', 'text' ],
-        'cta_note' => [ 'CTA note', 'text' ],
-        'mobile_sticky_label' => [ 'Mobile sticky CTA label', 'text' ],
-    ];
-}
-
-function mgk_page_layout_fields() {
-    return [
-        'show_hero' => 'Hero',
-        'show_process' => 'How: process',
-        'show_video' => 'How: video',
-        'show_difference' => 'How: difference',
-        'show_guarantee' => 'How: guarantee',
-        'show_pricing' => 'Pricing section',
-        'show_verification' => 'How: verification',
-        'show_comparison' => 'Comparison',
-        'show_concerns' => 'How: concerns',
-        'show_faq' => 'FAQ',
-        'show_calculator' => 'Pricing: calculator',
-        'show_rate_table' => 'Pricing: rate table',
-        'show_subject_premium' => 'Pricing: subject premiums',
-        'show_packages' => 'Pricing: packages',
-        'show_included' => 'Pricing: included',
-        'show_not_included' => 'Pricing: not included',
-        'show_level_groups' => 'Subjects: level groups',
-        'show_exam_groups' => 'Subjects: exam groups',
-        'show_combinations' => 'Subjects: combinations',
-        'show_trending' => 'Subjects: trending',
-        'show_streams' => 'Subjects: streams',
-        'show_international' => 'Subjects: international',
-        'show_featured' => 'Subjects: featured',
-        'show_cta' => 'Final CTA',
-    ];
-}
-
-add_action( 'add_meta_boxes', function () {
-    add_meta_box(
-        'mgk_page_content',
-        'MGK Page Content',
-        'mgk_page_content_meta_box',
-        'page',
-        'normal',
-        'high'
-    );
-
-    add_meta_box(
-        'mgk_page_layout',
-        'MGK Page Layout',
-        'mgk_page_layout_meta_box',
-        'page',
-        'side',
-        'default'
-    );
-} );
-
-function mgk_page_content_meta_box( $post ) {
-    wp_nonce_field( 'mgk_save_page_meta', 'mgk_page_meta_nonce' );
-    echo '<p>Editable copy for MGK page templates. Leave a field blank to use the template default.</p>';
-    echo '<table class="form-table" role="presentation"><tbody>';
-
-    foreach ( mgk_page_content_fields() as $key => $field ) {
-        [ $label, $type ] = $field;
-        $value = get_post_meta( $post->ID, '_mgk_' . $key, true );
-        $input_id = 'mgk_page_' . $key;
-        echo '<tr><th scope="row"><label for="' . esc_attr( $input_id ) . '">' . esc_html( $label ) . '</label></th><td>';
-        if ( $type === 'textarea' ) {
-            echo '<textarea class="large-text" rows="3" id="' . esc_attr( $input_id ) . '" name="mgk_page[' . esc_attr( $key ) . ']">' . esc_textarea( $value ) . '</textarea>';
-        } else {
-            echo '<input class="large-text" type="text" id="' . esc_attr( $input_id ) . '" name="mgk_page[' . esc_attr( $key ) . ']" value="' . esc_attr( $value ) . '">';
-        }
-        echo '</td></tr>';
-    }
-
-    echo '</tbody></table>';
-}
-
-function mgk_page_layout_meta_box( $post ) {
-    echo '<p>Control which template sections are visible on this page.</p>';
-
-    foreach ( mgk_page_layout_fields() as $key => $label ) {
-        $value = get_post_meta( $post->ID, '_mgk_' . $key, true );
-        $checked = $value === '' ? true : $value === '1';
-        echo '<p><label>';
-        echo '<input type="hidden" name="mgk_page[' . esc_attr( $key ) . ']" value="0">';
-        echo '<input type="checkbox" name="mgk_page[' . esc_attr( $key ) . ']" value="1" ' . checked( $checked, true, false ) . '> ';
-        echo esc_html( $label );
-        echo '</label></p>';
-    }
-}
-
-add_action( 'save_post_page', function ( $post_id ) {
-    if ( ! isset( $_POST['mgk_page_meta_nonce'] ) || ! wp_verify_nonce( sanitize_text_field( wp_unslash( $_POST['mgk_page_meta_nonce'] ) ), 'mgk_save_page_meta' ) ) {
-        return;
-    }
-    if ( defined( 'DOING_AUTOSAVE' ) && DOING_AUTOSAVE ) {
-        return;
-    }
-    if ( ! current_user_can( 'edit_page', $post_id ) ) {
-        return;
-    }
-
-    $posted = isset( $_POST['mgk_page'] ) && is_array( $_POST['mgk_page'] )
-        ? wp_unslash( $_POST['mgk_page'] )
-        : [];
-
-    foreach ( mgk_page_content_fields() as $key => $field ) {
-        $raw = $posted[ $key ] ?? '';
-        $value = $field[1] === 'textarea' ? sanitize_textarea_field( $raw ) : sanitize_text_field( $raw );
-        if ( $value === '' ) {
-            delete_post_meta( $post_id, '_mgk_' . $key );
-        } else {
-            update_post_meta( $post_id, '_mgk_' . $key, $value );
-        }
-    }
-
-    foreach ( mgk_page_layout_fields() as $key => $label ) {
-        update_post_meta( $post_id, '_mgk_' . $key, ( $posted[ $key ] ?? '0' ) === '1' ? '1' : '0' );
-    }
-} );
+// Marketing page copy and layout are intentionally edited in Elementor now.
+// mgk_page_field() and mgk_page_enabled() remain for legacy template fallbacks.

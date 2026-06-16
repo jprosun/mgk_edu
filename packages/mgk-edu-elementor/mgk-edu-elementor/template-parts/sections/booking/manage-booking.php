@@ -19,6 +19,16 @@ $cal = (array) ( $a['calendar'] ?? [] );
 
 $reschedule_label = $a['reschedule_label'] ?? '↻ Reschedule';
 $cancel_label     = $a['cancel_label']     ?? '× Cancel & refund';
+
+if ( ! empty( $a['is_package'] ) ) :
+    $bookings_url = (string) ( $a['urls']['bookings'] ?? home_url( '/my-bookings/' ) );
+    ?>
+<section class="mgk-cf-manage" data-event="confirm_manage_view">
+    <a class="mgk-cf-manage-btn" href="<?php echo esc_url( $bookings_url ); ?>">View package &amp; schedule lessons</a>
+</section>
+<?php
+    return;
+endif;
 ?>
 <section class="mgk-cf-manage" data-event="confirm_manage_view">
     <button type="button" class="mgk-cf-manage-btn" data-mgk-modal-open="reschedule"

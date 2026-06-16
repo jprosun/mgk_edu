@@ -132,6 +132,29 @@ function mgk_render_booking_detail( $booking_id ) {
 	echo '<h1>' . esc_html( $row['booking_code'] ) . ' ' . mgk_status_badge( $row['status'] ) . '</h1>';
 	echo '<p><a href="' . esc_url( $back ) . '">&larr; All bookings</a></p>';
 
+	// Result notice — tells the operator for SURE whether the account was created.
+	$done = isset( $_GET['done'] ) ? sanitize_key( $_GET['done'] ) : '';
+	if ( $done ) {
+		$linked_uid = (int) $row['parent_user_id'];
+		$link_hint  = ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ? ' — magic-link login is in <code>mgk_login_link_log</code>.' : ' and a magic-link login was emailed.';
+		if ( in_array( $done, [ 'force_confirm', 'create_account' ], true ) ) {
+			if ( $linked_uid ) {
+				$pu = get_user_by( 'id', $linked_uid );
+				echo '<div class="notice notice-success is-dismissible"><p>✅ Parent account <strong>' . esc_html( $pu ? $pu->user_email : ( '#' . $linked_uid ) ) . '</strong> (user #' . $linked_uid . ') is linked' . $link_hint . '</p></div>';
+			} else {
+				echo '<div class="notice notice-warning"><p>⚠️ Booking is confirmed, but <strong>no parent email was on file</strong>, so NO account was created. Enter a parent email below, then click <em>Create parent account</em>.</p></div>';
+			}
+		} elseif ( $done === 'email_saved' ) {
+			echo '<div class="notice notice-success is-dismissible"><p>Parent email saved. Now click <em>Create parent account</em> (or Force confirm).</p></div>';
+		} elseif ( $done === 'email_bad' ) {
+			echo '<div class="notice notice-error"><p>That email looks invalid — nothing was saved.</p></div>';
+		} elseif ( $done === 'login_sent' ) {
+			echo '<div class="notice notice-success is-dismissible"><p>Login link generated' . $link_hint . '</p></div>';
+		} else {
+			echo '<div class="notice notice-info is-dismissible"><p>Done: ' . esc_html( $done ) . '</p></div>';
+		}
+	}
+
 	// Summary.
 	$tz = mgk_booking_tz();
 	$fmt = function ( $utc ) use ( $tz ) {
@@ -181,6 +204,28 @@ function mgk_render_booking_detail( $booking_id ) {
 	}
 	echo '</p>';
 
+	// Parent account — manual email entry + account control (agency operator).
+	echo '<h2>Parent account</h2>';
+	$linked_uid = (int) $row['parent_user_id'];
+	$lead_email = ( ! empty( $row['lead_id'] ) && function_exists( 'mgk_lead_contact' ) )
+		? mgk_lead_contact( (int) $row['lead_id'] )['email'] : '';
+	if ( $linked_uid ) {
+		$pu = get_user_by( 'id', $linked_uid );
+		echo '<p>✅ Linked account: <strong>' . esc_html( $pu ? $pu->user_email : ( '#' . $linked_uid ) ) . '</strong> (user #' . $linked_uid . ')</p>';
+	} elseif ( $lead_email ) {
+		echo '<p>Email on file: <strong>' . esc_html( $lead_email ) . '</strong> — no account yet.</p>';
+	} else {
+		echo '<p><em>No parent email on this booking yet.</em></p>';
+	}
+	echo '<form method="post" action="' . esc_url( admin_url( 'admin-post.php?action=mgk_booking_action&do=set_email&booking=' . $booking_id ) ) . '" style="margin:8px 0;display:flex;gap:8px;align-items:center">';
+	wp_nonce_field( 'mgk_booking_action_' . $booking_id );
+	echo '<input type="email" name="parent_email" value="' . esc_attr( $lead_email ) . '" placeholder="parent@email.com" class="regular-text" required> ';
+	echo '<button class="button">Save parent email</button></form>';
+	echo '<p style="display:flex;gap:8px;flex-wrap:wrap">';
+	echo $action( 'create_account', $linked_uid ? 'Re-link / refresh account' : 'Create parent account', 'Create or link the parent account for this booking now?' );
+	if ( $linked_uid ) echo $action( 'send_login', 'Send login link' );
+	echo '</p>';
+
 	// Event log.
 	echo '<h2>Event log</h2>';
 	$events = mgk_get_booking_events( $booking_id, 100 );
@@ -209,6 +254,8 @@ add_action( 'admin_post_mgk_booking_action', function () {
 	$row = mgk_get_booking_row( $booking_id );
 	if ( ! $row ) wp_die( 'Booking not found.' );
 
+	$done_flag = $do; // what the result notice keys on (a case may override it)
+
 	switch ( $do ) {
 		case 'force_confirm':
 			mgk_engine_promote_locks_to_booking( $booking_id );
@@ -236,12 +283,41 @@ add_action( 'admin_post_mgk_booking_action', function () {
 			] );
 			break;
 
+		case 'set_email':
+			$email = isset( $_POST['parent_email'] ) ? sanitize_email( wp_unslash( $_POST['parent_email'] ) ) : '';
+			if ( ! $email || ! is_email( $email ) || ! function_exists( 'mgk_parent_attach_booking_email' ) ) {
+				$done_flag = 'email_bad';
+				break;
+			}
+			$res = mgk_parent_attach_booking_email( $booking_id, $email );
+			$done_flag = is_wp_error( $res ) ? 'email_bad' : 'email_saved';
+			break;
+
+		case 'create_account':
+			if ( function_exists( 'mgk_parent_claim_on_booking' ) ) {
+				mgk_parent_claim_on_booking( $booking_id );
+			}
+			$done_flag = 'create_account';
+			break;
+
+		case 'send_login':
+			$fresh = mgk_get_booking_row( $booking_id );
+			if ( ! empty( $fresh['parent_user_id'] ) && function_exists( 'mgk_parent_send_login_link' ) ) {
+				mgk_parent_send_login_link(
+					(int) $fresh['parent_user_id'],
+					function_exists( 'mgk_cta_url' ) ? mgk_cta_url( 'dashboard' ) : home_url( '/parent/dashboard/' ),
+					'login'
+				);
+			}
+			$done_flag = 'login_sent';
+			break;
+
 		default:
 			wp_die( 'Unknown action.' );
 	}
 
 	wp_safe_redirect( add_query_arg(
-		[ 'page' => 'mgk-booking-engine', 'booking' => $booking_id, 'done' => $do ],
+		[ 'page' => 'mgk-booking-engine', 'booking' => $booking_id, 'done' => $done_flag ],
 		admin_url( 'edit.php?post_type=mg_booking' )
 	) );
 	exit;
