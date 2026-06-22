@@ -1,11 +1,18 @@
 <?php
 /**
- * S11 — Trial Booking · Pay — LOCKED DATA CORE.
+ * S11 — Checkout · Pay — LOCKED DATA CORE.
  * =============================================
+ * The SHARED payment page for every paid service (trial lesson, lesson package,
+ * and any future payable service). It is service-agnostic: the amounts always
+ * follow the booking row's `price_amount` (the single source of truth for the
+ * charge) and the per-service copy (line label, secure-nav label, slotless flag)
+ * comes from ONE place — mgk_pay_item_descriptor() — keyed by the booking's
+ * `lesson_type` and extensible via the `mgk_pay_item_types` filter.
+ *
  * Step 3 (final) of the booking flow (PAY). Shows the order summary with stacked
  * discounts + GST, an account auto-create email capture, the payment method
  * (PayNow QR / Card fallback), terms consent, and the pay CTA. On confirm it
- * moves to S12 (confirmation). Payment is mocked in this phase (no real charge).
+ * moves to S12 (confirmation).
  *
  * Per the MGK 3-layer rule (ONBOARDING §1.5, PLAYBOOK §3.5): Elementor controls
  * presentation only. Everything in this file is LOCKED:
@@ -43,9 +50,149 @@ function mgk_get_pay_context_from_request() {
         : [ 'lead_token' => '', 'tutor_slug' => '', 'proposal_id' => '' ];
     $ctx['slot_id']    = function_exists( 'mgk_get_query_filter' ) ? (string) mgk_get_query_filter( 'slot', '' ) : '';
     $ctx['hold_token'] = function_exists( 'mgk_get_query_filter' ) ? (string) mgk_get_query_filter( 'hold', '' ) : '';
-    // Real engine booking id (carried from S10 after a successful hold).
-    $ctx['booking_id'] = function_exists( 'mgk_get_query_filter' ) ? (int) mgk_get_query_filter( 'booking', 0 ) : 0;
+    // Real engine booking (id OR booking_code). Package checkout returns a code;
+    // S10 trial holds usually carry a numeric id. Normalize both to booking_id.
+    $raw_booking = function_exists( 'mgk_get_query_filter' ) ? (string) mgk_get_query_filter( 'booking', '' ) : '';
+    $ctx['booking']      = $raw_booking;
+    $ctx['booking_id']   = 0;
+    $ctx['booking_code'] = '';
+    if ( $raw_booking !== '' ) {
+        $row = mgk_pay_resolve_booking_row( $raw_booking );
+        if ( $row ) {
+            $ctx['booking_id']   = (int) $row['id'];
+            $ctx['booking_code'] = (string) $row['booking_code'];
+            if ( empty( $ctx['tutor_slug'] ) && ! empty( $row['tutor_post_id'] ) ) {
+                $post = get_post( (int) $row['tutor_post_id'] );
+                if ( $post ) $ctx['tutor_slug'] = $post->post_name;
+            }
+        } elseif ( ctype_digit( $raw_booking ) ) {
+            $ctx['booking_id'] = (int) $raw_booking;
+        }
+    }
     return $ctx;
+}
+
+function mgk_pay_resolve_booking_row( $booking ) {
+    $booking = trim( (string) $booking );
+    if ( $booking === '' ) return null;
+    if ( ctype_digit( $booking ) && function_exists( 'mgk_get_booking_row' ) ) {
+        return mgk_get_booking_row( (int) $booking );
+    }
+    if ( function_exists( 'mgk_get_booking_by_code' ) ) {
+        return mgk_get_booking_by_code( $booking );
+    }
+    return null;
+}
+
+function mgk_pay_tutor_from_booking_row( $row ) {
+    $tutor_id = (int) ( $row['tutor_post_id'] ?? 0 );
+    $post = $tutor_id ? get_post( $tutor_id ) : null;
+    return [
+        'id'         => $tutor_id,
+        'name'       => $post ? $post->post_title : 'Your tutor',
+        'slug'       => $post ? $post->post_name : '',
+        'rate_num'   => $tutor_id ? (int) get_post_meta( $tutor_id, 'mgk_rate_num', true ) : 0,
+        'avatar_url' => ( $tutor_id && has_post_thumbnail( $tutor_id ) ) ? get_the_post_thumbnail_url( $tutor_id, 'thumbnail' ) : '',
+    ];
+}
+
+function mgk_pay_is_package_row( $row ) {
+    return mgk_pay_item_descriptor( $row )['is_package'];
+}
+
+/* ── Generic payable-item descriptor (SHARED checkout, LOCKED) ──
+ *
+ * Single source of truth for the per-service presentation of the shared payment
+ * page (S11). EVERY service that goes through checkout — trial lesson, lesson
+ * package, and any future paid service — is described here, keyed by the booking
+ * row's `lesson_type`. The summary line label, the secure-nav label, the
+ * "slotless" flag and the item "kind" all come from this ONE place, so the page
+ * is service-agnostic: the amounts already follow the booking row's
+ * `price_amount`, and the copy follows this descriptor.
+ *
+ * Register a new payable service with the `mgk_pay_item_types` filter — no
+ * template-part edits needed. Unknown types fall back to a generic checkout
+ * label derived from the lesson_type token.
+ */
+
+/**
+ * @param array|string $row_or_type  booking row OR a lesson_type string
+ * @return array{kind:string,line_label:string,secure_phrase:string,secure_with:string,slotless:bool,lessons:int,is_package:bool}
+ */
+function mgk_pay_item_descriptor( $row_or_type ) {
+    $lesson_type = is_array( $row_or_type )
+        ? (string) ( $row_or_type['lesson_type'] ?? 'TRIAL' )
+        : (string) $row_or_type;
+    if ( $lesson_type === '' ) $lesson_type = 'TRIAL';
+
+    $types = apply_filters( 'mgk_pay_item_types', [
+        'TRIAL' => [
+            'kind'          => 'trial',
+            'line_label'    => 'Trial lesson',          // duration "(1.5h)" appended by the summary
+            'secure_phrase' => 'BOOKING TRIAL',
+            'secure_with'   => 'BOOKING TRIAL WITH ',
+            'slotless'      => false,
+        ],
+        'PACKAGE_8' => [
+            'kind'          => 'package',
+            'line_label'    => '8-lesson package',
+            'secure_phrase' => 'BUYING LESSON PACKAGE',
+            'secure_with'   => 'BUYING PACKAGE WITH ',
+            'slotless'      => true,
+            'lessons'       => 8,
+        ],
+        'PACKAGE_16' => [
+            'kind'          => 'package',
+            'line_label'    => '16-lesson package',
+            'secure_phrase' => 'BUYING LESSON PACKAGE',
+            'secure_with'   => 'BUYING PACKAGE WITH ',
+            'slotless'      => true,
+            'lessons'       => 16,
+        ],
+    ], $row_or_type );
+
+    if ( isset( $types[ $lesson_type ] ) ) {
+        $d = $types[ $lesson_type ];
+    } else {
+        // Generic fallback for any future / unregistered payable service: a
+        // human label from the token, treated as a slot-based single item.
+        $human = ucwords( strtolower( str_replace( [ '_', '-' ], ' ', $lesson_type ) ) );
+        $d = [
+            'kind'          => 'service',
+            'line_label'    => $human ?: 'Service',
+            'secure_phrase' => 'SECURE CHECKOUT',
+            'secure_with'   => 'CHECKOUT WITH ',
+            'slotless'      => false,
+        ];
+    }
+
+    return [
+        'kind'          => (string) ( $d['kind'] ?? 'service' ),
+        'line_label'    => (string) ( $d['line_label'] ?? 'Service' ),
+        'secure_phrase' => (string) ( $d['secure_phrase'] ?? 'SECURE CHECKOUT' ),
+        'secure_with'   => (string) ( $d['secure_with'] ?? 'CHECKOUT WITH ' ),
+        'slotless'      => ! empty( $d['slotless'] ),
+        'lessons'       => (int) ( $d['lessons'] ?? 0 ),
+        'is_package'    => ( $d['kind'] ?? '' ) === 'package',
+    ];
+}
+
+/**
+ * Secure-checkout nav label for a payable item, e.g.
+ * "🔒 BOOKING TRIAL WITH MS SIM" / "🔒 BUYING PACKAGE WITH MS SIM" /
+ * "🔒 SECURE CHECKOUT". Driven entirely by the item descriptor so the strings
+ * live in one place.
+ *
+ * @param array|string $row_or_type booking row OR lesson_type
+ * @param string       $tutor_name  optional, to personalise "… WITH <NAME>"
+ */
+function mgk_pay_secure_label( $row_or_type, $tutor_name = '' ) {
+    $d     = mgk_pay_item_descriptor( $row_or_type );
+    $label = $d['secure_phrase'];
+    if ( $tutor_name && preg_match( '/\b(Ms|Mr|Mrs|Dr)\.?\s+([A-Z][a-z]+)/', (string) $tutor_name, $m ) ) {
+        $label = $d['secure_with'] . strtoupper( $m[1] . ' ' . $m[2] );
+    }
+    return '🔒 ' . $label;
 }
 
 /* ── Discount stack + order summary (LOCKED) ─────────────── */
@@ -116,11 +263,13 @@ function mgk_get_pay_order_summary( $tutor = null, $context = [] ) {
         if ( $brow && isset( $brow['price_amount'] ) && in_array( $brow['status'], [ 'HELD', 'PENDING_PAYMENT', 'CONFIRMED', 'MANUAL_REVIEW' ], true ) ) {
             $booking_price   = (float) $brow['price_amount'];
             $booking_voucher = (string) ( $brow['voucher_code'] ?? '' );
-            $lesson_type = (string) ( $brow['lesson_type'] ?? 'TRIAL' );
-            if ( $lesson_type === 'PACKAGE_16' ) {
-                $booking_line_label = '16-lesson package';
-            } elseif ( $lesson_type === 'PACKAGE_8' ) {
-                $booking_line_label = '8-lesson package';
+            // Service-agnostic line label from the payable-item descriptor.
+            // Slot-based items (trial / single) append the duration; slotless
+            // items (packages) carry their own self-describing label.
+            $desc = mgk_pay_item_descriptor( $brow );
+            $booking_line_label = $desc['line_label'];
+            if ( ! $desc['slotless'] && $dur_h !== '' ) {
+                $booking_line_label .= sprintf( ' (%sh)', $dur_h );
             }
         }
     }
@@ -251,6 +400,13 @@ function mgk_get_card_surcharge( $amount ) {
 /** Payment reference for this booking (deterministic, demo-safe). */
 function mgk_get_payment_reference( $context = [] ) {
     $context = (array) ( $context ?: mgk_get_pay_context_from_request() );
+    if ( ! empty( $context['booking_code'] ) ) {
+        return (string) $context['booking_code'];
+    }
+    if ( ! empty( $context['booking_id'] ) && function_exists( 'mgk_get_booking_row' ) ) {
+        $row = mgk_get_booking_row( (int) $context['booking_id'] );
+        if ( $row && ! empty( $row['booking_code'] ) ) return (string) $row['booking_code'];
+    }
     $tutor   = sanitize_title( $context['tutor_slug'] ?? '' );
     $short   = strtoupper( substr( preg_replace( '/[^a-z0-9]/i', '', $tutor ?: 'tutor' ), 0, 4 ) );
     $lead    = strtoupper( substr( preg_replace( '/[^a-z0-9]/i', '', (string) ( $context['lead_token'] ?? '' ) ), 0, 4 ) );
@@ -351,7 +507,7 @@ function mgk_get_s12_confirm_url( $context = [] ) {
         'lead'    => $context['lead_token'] ?? '',
         'tutor'   => $context['tutor_slug'] ?? '',
         'slot'    => $context['slot_id'] ?? '',
-        'booking' => $context['booking_id'] ?? 0,   // real engine booking id
+        'booking' => $context['booking_code'] ?? ( $context['booking_id'] ?? 0 ),
         'ref'     => mgk_get_payment_reference( $context ),
     ] );
     return add_query_arg( $args, home_url( '/trial-confirmed/' ) );
@@ -364,11 +520,11 @@ function mgk_get_s12_confirm_url( $context = [] ) {
  */
 add_action( 'template_redirect', function () {
     if ( ! function_exists( 'is_page' ) || ! ( is_page( [ 'trial-pay', 'pay' ] ) ) ) return;
-    $bid = isset( $_GET['booking'] ) ? (int) $_GET['booking'] : 0;
+    $ctx = mgk_get_pay_context_from_request();
+    $bid = (int) ( $ctx['booking_id'] ?? 0 );
     if ( ! $bid || ! function_exists( 'mgk_get_booking_row' ) ) return;
     $row = mgk_get_booking_row( $bid );
     if ( $row && in_array( $row['status'], [ 'CONFIRMED', 'COMPLETED' ], true ) ) {
-        $ctx = mgk_get_pay_context_from_request();
         wp_safe_redirect( mgk_get_s12_confirm_url( $ctx ) );
         exit;
     }
@@ -383,6 +539,58 @@ add_action( 'template_redirect', function () {
  */
 function mgk_get_pay_view() {
     $context = mgk_get_pay_context_from_request();
+    $booking_id = (int) ( $context['booking_id'] ?? 0 );
+
+    // Package orders are slotless booking rows. Do not run them through the
+    // trial S09/S10 selected-slot flow, otherwise the page falls back to trial
+    // copy/amounts. The booking row is the source of truth.
+    if ( $booking_id && function_exists( 'mgk_get_booking_row' ) ) {
+        $booking_row = mgk_get_booking_row( $booking_id );
+        if ( $booking_row && mgk_pay_is_package_row( $booking_row ) ) {
+            if ( in_array( $booking_row['status'], [ 'CONFIRMED', 'COMPLETED' ], true ) ) {
+                return [ 'status' => 'confirmed', 'context' => $context, 'booking_id' => $booking_id ];
+            }
+            if ( ! in_array( $booking_row['status'], [ 'PENDING_PAYMENT', 'HELD', 'MANUAL_REVIEW' ], true ) ) {
+                return [ 'status' => 'expired', 'context' => $context, 'booking_id' => $booking_id ];
+            }
+
+            $tutor = mgk_pay_tutor_from_booking_row( $booking_row );
+            $summary = mgk_get_pay_order_summary( $tutor, $context );
+            $desc    = mgk_pay_item_descriptor( $booking_row );
+            $lessons = $desc['lessons'] ?: ( function_exists( 'mgk_confirm_package_lessons' )
+                ? mgk_confirm_package_lessons( (string) $booking_row['lesson_type'] )
+                : ( (string) $booking_row['lesson_type'] === 'PACKAGE_16' ? 16 : 8 ) );
+            $email = '';
+            if ( ! empty( $booking_row['parent_user_id'] ) ) {
+                $u = get_user_by( 'id', (int) $booking_row['parent_user_id'] );
+                if ( $u ) $email = $u->user_email;
+            }
+
+            return [
+                'status'       => 'ok',
+                'context'      => $context,
+                'tutor'        => $tutor,
+                'selected'     => [ 'id' => 'package-' . $booking_id, 'label' => 'Schedule lesson-by-lesson after purchase' ],
+                'active_label' => $lessons ? sprintf( '%d-lesson package', $lessons ) : 'Package',
+                'duration_min' => 0,
+                'hold'         => [ 'active' => false, 'slot_id' => '', 'hold_token' => (string) $booking_id, 'remaining' => 0 ],
+                'hold_seconds' => 0,
+                'summary'      => $summary,
+                'methods'      => mgk_get_payment_methods(),
+                'reference'    => mgk_get_payment_reference( $context ),
+                'payee'        => mgk_get_payee_details(),
+                'surcharge'    => mgk_get_card_surcharge( $summary['total_num'] ),
+                'states'       => mgk_get_payment_states(),
+                'account'      => array_merge( mgk_get_account_create_refs(), [ 'email' => $email ] ),
+                'terms'        => mgk_get_terms_links(),
+                'booking_id'   => $booking_id,
+                'booking_status' => (string) $booking_row['status'],
+                'is_package_order' => true,
+                'item_kind'    => $desc['kind'],
+                'secure_label' => mgk_pay_secure_label( $booking_row, $tutor['name'] ?? '' ),
+            ];
+        }
+    }
 
     // Reuse the S09 view to resolve + validate tutor / proposal state.
     $sel = function_exists( 'mgk_get_select_tutor_view' ) ? mgk_get_select_tutor_view() : [ 'status' => 'not_found' ];
@@ -405,8 +613,8 @@ function mgk_get_pay_view() {
     // status drives the page (so an expired/paid hold is reflected), its slot
     // label feeds the summary, and the countdown comes from the real hold. The
     // presentation/markup is unchanged — only the DATA source is the engine.
-    $booking_id = (int) ( $context['booking_id'] ?? 0 );
     $booking_status = '';
+    $row = null;
     if ( $booking_id && function_exists( 'mgk_get_booking_row' ) ) {
         $row = mgk_get_booking_row( $booking_id );
         if ( $row ) {
@@ -431,6 +639,11 @@ function mgk_get_pay_view() {
             }
         }
     }
+    $account = mgk_get_account_create_refs();
+    if ( ! empty( $row['parent_user_id'] ) ) {
+        $u = get_user_by( 'id', (int) $row['parent_user_id'] );
+        if ( $u ) $account['email'] = $u->user_email;
+    }
 
     return [
         'status'    => 'ok',
@@ -447,10 +660,12 @@ function mgk_get_pay_view() {
         'payee'     => mgk_get_payee_details(),
         'surcharge' => $surcharge,
         'states'    => mgk_get_payment_states(),
-        'account'   => mgk_get_account_create_refs(),
+        'account'   => $account,
         'terms'     => mgk_get_terms_links(),
         'booking_id'     => $booking_id,
         'booking_status' => $booking_status,
+        'item_kind'      => mgk_pay_item_descriptor( $row ?: 'TRIAL' )['kind'],
+        'secure_label'   => mgk_pay_secure_label( $row ?: 'TRIAL', $tutor['name'] ?? '' ),
     ];
 }
 

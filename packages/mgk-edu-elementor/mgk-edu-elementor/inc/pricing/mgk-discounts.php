@@ -25,6 +25,11 @@
 
 if ( ! defined( 'ABSPATH' ) ) exit;
 
+use Margick\Commerce\Domain\Money;
+use Margick\Commerce\Domain\Discount\DiscountEngine;
+use Margick\Commerce\Domain\Discount\DiscountLine;
+use Margick\Commerce\Domain\Discount\QuoteRequest;
+
 if ( ! defined( 'MGK_GST_PCT' ) )            define( 'MGK_GST_PCT', 9 );          // BR-04
 if ( ! defined( 'MGK_DISCOUNT_STACK_CAP' ) ) define( 'MGK_DISCOUNT_STACK_CAP', 25 ); // BR-05/06
 
@@ -53,6 +58,7 @@ function mgk_discount_rules_defaults() {
 		'stack_cap_pct'    => MGK_DISCOUNT_STACK_CAP, // total extra-discount ceiling
 		'gst_pct'          => MGK_GST_PCT,
 		'gst_inclusive'    => 1,
+		'currency'         => 'SGD',   // site charge currency; Money infers decimals (VND/JPY = 0)
 	];
 }
 
@@ -198,158 +204,124 @@ function mgk_quote_base( $args ) {
  * @return array
  */
 function mgk_quote( $args = [] ) {
-	$rules   = mgk_discount_rules();
-	$ctx     = (array) ( $args['context'] ?? [] );
-	$money   = function ( $n ) { return '$' . number_format( (float) $n, 2 ); };
+	$rules     = mgk_discount_rules();
+	$ctx       = (array) ( $args['context'] ?? [] );
+	$money     = function ( $n ) { return '$' . number_format( (float) $n, 2 ); };
 	$item_type = (string) ( $args['item_type'] ?? 'trial' );
+	$currency  = (string) ( $rules['currency'] ?? 'SGD' );
+	$cap_pct   = max( 0, (int) $rules['stack_cap_pct'] );
+	$gst_pct   = (int) $rules['gst_pct'];
+	$gst_incl  = ! empty( $rules['gst_inclusive'] );
 
 	$b          = mgk_quote_base( $args );
 	$base       = (float) $b['base'];
-	$advertised = (float) $b['advertised'];   // price floor the stack applies on
+	$advertised = (float) $b['advertised'];
 	$is_package = in_array( $item_type, [ 'package_8', 'package_16' ], true );
 
-	$rows = [];
-	$rows[] = [ 'label' => ( $args['line_label'] ?? 'Lesson' ), 'value' => $money( $base ), 'accent' => false, 'strong' => false ];
-	if ( $b['headline_amount'] > 0 ) {
-		$rows[] = [ 'label' => $b['headline_label'], 'value' => '-' . $money( $b['headline_amount'] ), 'accent' => true, 'strong' => false ];
-	}
+	// Headline (advertised) discount — edu item-type logic stays in mgk_quote_base().
+	$headline = ( $b['headline_amount'] > 0 )
+		? new DiscountLine( 'headline:' . $item_type, $b['headline_label'], (int) $b['headline_pct'], Money::ofMajor( (float) $b['headline_amount'], $currency ) )
+		: null;
 
-	// Machine record stored on booking.discount_applied. Include the headline
-	// discount as well as extra stack rows so S11 can render a self-balancing
-	// breakdown from the frozen booking row, independent of later rule edits.
-	$applied = [];
-	if ( $b['headline_amount'] > 0 ) {
-		$applied[] = [
-			'key'    => 'headline:' . $item_type,
-			'label'  => $b['headline_label'],
-			'pct'    => (int) $b['headline_pct'],
-			'amount' => round( (float) $b['headline_amount'], 2 ),
-		];
-	}
-
-	$running      = $advertised;
-	$cap_pct      = max( 0, (int) $rules['stack_cap_pct'] );
-	$cap_amount   = $advertised * ( $cap_pct / 100 );
-	$stack_taken  = 0.0;
-	$capped       = false;
-	$apply_loyalty= $args['apply_loyalty'] ?? true;
-	$voucher_note = '';
-	$code = strtoupper( trim( (string) ( $args['voucher_code'] ?? '' ) ) );
-	$voucher = null;
-	if ( $code !== '' && function_exists( 'mgk_voucher_validate' ) ) {
-		$voucher = mgk_voucher_validate( $code, [
-			'subtotal'  => $advertised,
-			'base'      => $advertised,
-			'item_type' => $item_type,
-			'context'   => $ctx,
-		] );
-		if ( empty( $voucher['valid'] ) ) {
-			$voucher_note = (string) ( $voucher['message'] ?? 'Voucher not applicable' );
-			$voucher = null;
-		}
-	}
-
-	$take = function ( $label, $key, $pct, $amount ) use ( &$rows, &$applied, &$running, &$stack_taken, &$capped, $cap_amount, $money ) {
-		$amt = (float) $amount;
-		if ( $stack_taken + $amt > $cap_amount + 0.001 ) {
-			$amt    = max( 0, $cap_amount - $stack_taken );
-			$capped = true;
-		}
-		if ( $amt <= 0 ) return;
-		$stack_taken += $amt;
-		$running      = max( 0, $running - $amt );
-		$applied[] = [ 'key' => $key, 'label' => $label, 'pct' => (int) $pct, 'amount' => round( $amt, 2 ) ];
-		$rows[] = [ 'label' => sprintf( '%s%s', $label, $pct ? sprintf( ' (%d%%)', (int) $pct ) : '' ),
-		            'value' => '-' . $money( $amt ), 'accent' => true, 'strong' => false ];
-	};
-
-	// Candidate EXTRA discounts on top of the advertised (headline) price. All are
-	// computed on the advertised amount so the two sides are directly comparable.
+	// ── Eligibility (edu/WP) → candidate EXTRA discounts on the advertised price ──
+	$apply_loyalty = $args['apply_loyalty'] ?? true;
 	$loyalty = [];
 	if ( $apply_loyalty ) {
 		if ( ! empty( $rules['sibling_enabled'] ) && mgk_discount_is_sibling( $ctx ) ) {
 			$p = $is_package ? (int) $rules['sibling_pkg_pct'] : (int) $rules['sibling_pct'];
-			$loyalty[] = [ 'label' => 'Sibling discount', 'key' => 'sibling', 'pct' => $p, 'amount' => $advertised * $p / 100 ];
+			$loyalty[] = new DiscountLine( 'sibling', 'Sibling discount', $p, Money::ofMajor( $advertised * $p / 100, $currency ) );
 		}
 		if ( ! empty( $rules['returning_enabled'] ) && mgk_discount_is_returning( $ctx ) ) {
 			$p = (int) $rules['returning_pct'];
-			$loyalty[] = [ 'label' => 'Returning student', 'key' => 'returning', 'pct' => $p, 'amount' => $advertised * $p / 100 ];
+			$loyalty[] = new DiscountLine( 'returning', 'Returning student', $p, Money::ofMajor( $advertised * $p / 100, $currency ) );
 		}
 	}
-	$loyalty_total = 0.0;
-	foreach ( $loyalty as $l ) $loyalty_total += $l['amount'];
 
-	$voucher_cand = null;
-	if ( $voucher ) {
-		$vpct = $voucher['type'] === 'pct' ? (int) $voucher['value'] : 0;
-		$vamt = $voucher['type'] === 'fixed' ? (float) $voucher['value'] : $advertised * ( (float) $voucher['value'] / 100 );
-		$voucher_cand = [ 'label' => 'Voucher ' . $code, 'key' => 'voucher:' . $code, 'pct' => $vpct, 'amount' => $vamt ];
-	}
-
-	// Decide which discounts to apply. A NON-stackable voucher (BR-11) cannot
-	// combine with the automatic loyalty discounts — so instead of silently
-	// dropping loyalty, we apply whichever side saves the parent MORE (the
-	// best-for-customer rule), and tell them which we chose. A stackable voucher
-	// (or no conflict) simply stacks on top of loyalty, under the 25% cap.
-	$chosen = [];
-	if ( $voucher_cand && empty( $voucher['is_stackable'] ) && $loyalty ) {
-		if ( $loyalty_total > $voucher_cand['amount'] + 0.001 ) {
-			$chosen       = $loyalty;   // existing discounts win
-			$voucher_note = sprintf( 'Voucher %s not applied — your current discounts save more (-%s)', $code, $money( $loyalty_total ) );
+	// ── Voucher (edu/WP CPT) ──
+	$code = strtoupper( trim( (string) ( $args['voucher_code'] ?? '' ) ) );
+	$voucher = null; $voucher_stackable = false; $voucher_note = '';
+	if ( $code !== '' && function_exists( 'mgk_voucher_validate' ) ) {
+		$v = mgk_voucher_validate( $code, [ 'subtotal' => $advertised, 'base' => $advertised, 'currency' => $currency, 'item_type' => $item_type, 'context' => $ctx ] );
+		if ( ! empty( $v['valid'] ) ) {
+			$vpct = $v['type'] === 'pct' ? (int) round( (float) $v['value'] ) : 0;
+			$vamt = isset( $v['amount'] )
+				? (float) $v['amount']
+				: ( $v['type'] === 'fixed' ? (float) $v['value'] : $advertised * ( (float) $v['value'] / 100 ) );
+			$voucher = new DiscountLine( 'voucher:' . $code, 'Voucher ' . $code, $vpct, Money::ofMajor( $vamt, $currency ) );
+			$voucher_stackable = ! empty( $v['is_stackable'] );
 		} else {
-			$chosen       = [ $voucher_cand ]; // voucher wins
-			$voucher_note = 'Voucher applied instead of your other discounts (better value)';
+			$voucher_note = (string) ( $v['message'] ?? 'Voucher not applicable' );
 		}
-	} else {
-		$chosen = $loyalty;
-		if ( $voucher_cand ) $chosen[] = $voucher_cand;
 	}
 
-	foreach ( $chosen as $d ) {
-		$take( $d['label'], $d['key'], (int) $d['pct'], (float) $d['amount'] );
+	// ── Generic engine = single source of math: conflict + stacking + cap + GST ──
+	$res = ( new DiscountEngine() )->quote( new QuoteRequest(
+		base:             Money::ofMajor( $base, $currency ),
+		headline:         $headline,
+		loyalty:          $loyalty,
+		voucher:          $voucher,
+		voucherStackable: $voucher_stackable,
+		capPct:           $cap_pct,
+		gstPct:           $gst_pct,
+		gstInclusive:     $gst_incl,
+		lineLabel:        ( $args['line_label'] ?? 'Lesson' )
+	) );
+
+	// Voucher messaging (BR-11) reconstructed from which side the engine applied.
+	if ( $voucher && ! $voucher_stackable && $loyalty ) {
+		$applied_keys = array_map( function ( $d ) { return $d->key; }, $res->applied );
+		if ( in_array( 'voucher:' . $code, $applied_keys, true ) ) {
+			$voucher_note = 'Voucher applied instead of your other discounts (better value)';
+		} else {
+			$loyalty_total = 0.0;
+			foreach ( $loyalty as $l ) { $loyalty_total += $l->amount->toMajor(); }
+			$voucher_note = sprintf( 'Voucher %s not applied — your current discounts save more (-%s)', $code, $money( $loyalty_total ) );
+		}
 	}
 
-	$subtotal = round( $running, 2 );
-	$gst_pct  = (int) $rules['gst_pct'];
-
-	// GST breakout for the e-invoice (SRS: bóc tách GST 9%). Inclusive (BR-04
-	// default): the discounted line ALREADY contains GST → extract it. Exclusive:
-	// add GST on top, so the charged total grows.
-	if ( ! empty( $rules['gst_inclusive'] ) ) {
-		$total      = $subtotal;
-		$gst_amount = $gst_pct > 0 ? round( $total - $total / ( 1 + $gst_pct / 100 ), 2 ) : 0.0;
-		$net_amount = round( $total - $gst_amount, 2 );
-		$gst_note   = sprintf( 'INCL. %d%% GST (BR-04) · SGD', $gst_pct );
-	} else {
-		$net_amount = $subtotal;
-		$gst_amount = $gst_pct > 0 ? round( $net_amount * $gst_pct / 100, 2 ) : 0.0;
-		$total      = round( $net_amount + $gst_amount, 2 );
-		$gst_note   = sprintf( '+ %d%% GST (BR-04) · SGD', $gst_pct );
+	// ── Map engine result → the EXACT mgk_quote() return contract ($ format + rows) ──
+	$rows = [];
+	$rows[] = [ 'label' => ( $args['line_label'] ?? 'Lesson' ), 'value' => $money( $base ), 'accent' => false, 'strong' => false ];
+	foreach ( $res->applied as $d ) {
+		$is_headline = strpos( $d->key, 'headline:' ) === 0;
+		$rows[] = [
+			'label'  => $is_headline ? $d->label : $d->labelWithPct(),
+			'value'  => '-' . $money( $d->amount->toMajor() ),
+			'accent' => true, 'strong' => false,
+		];
 	}
 
-	$cap_note = $capped ? sprintf( 'Stacked discounts capped at %d%% (BR-05/06)', $cap_pct ) : '';
+	$subtotal   = $res->subtotal->toMajor();
+	$total      = $res->total->toMajor();
+	$net_amount = $res->net->toMajor();
+	$gst_amount = $res->gst->toMajor();
+	$gst_note   = $gst_incl
+		? sprintf( 'INCL. %d%% GST (BR-04) · %s', $gst_pct, $currency )
+		: sprintf( '+ %d%% GST (BR-04) · %s', $gst_pct, $currency );
+	$cap_note   = $res->capped ? sprintf( 'Stacked discounts capped at %d%% (BR-05/06)', $cap_pct ) : '';
 
 	return [
 		'rows'             => $rows,
 		'base'             => round( $base, 2 ),
 		'advertised'       => round( $advertised, 2 ),
 		'headline'         => $b['headline_amount'] > 0 ? [ 'label' => $b['headline_label'], 'pct' => $b['headline_pct'], 'amount' => round( $b['headline_amount'], 2 ) ] : null,
-		'discounts_applied'=> $applied,            // ← persisted on booking.discount_applied
+		'discounts_applied'=> $res->appliedToArray(),
 		'subtotal'         => round( $subtotal, 2 ),
-		'total'            => round( $total, 2 ),   // ← the exact amount Stripe charges
+		'total'            => round( $total, 2 ),
 		'total_str'        => $money( $total ),
 		'subtotal_str'     => $money( $subtotal ),
-		'net_amount'       => $net_amount,         // ← e-invoice: pre-GST
+		'net_amount'       => $net_amount,
 		'net_str'          => $money( $net_amount ),
-		'gst_amount'       => $gst_amount,         // ← e-invoice: GST component (9%)
+		'gst_amount'       => $gst_amount,
 		'gst_str'          => $money( $gst_amount ),
-		'gst_inclusive'    => ! empty( $rules['gst_inclusive'] ),
-		'currency'         => 'SGD',
+		'gst_inclusive'    => $gst_incl,
+		'currency'         => $currency,
 		'gst_note'         => $gst_note,
 		'gst_pct'          => $gst_pct,
 		'cap_note'         => $cap_note,
 		'voucher_note'     => $voucher_note,
 		'voucher_code'     => $code,
+		'item_type'        => $item_type,
 	];
 }
 

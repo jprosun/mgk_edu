@@ -78,6 +78,7 @@ function mgk_engine_quote_for_booking( $row, $voucher_code = null ) {
 			'voucher_code'   => $code,
 		], $tutor_id )
 		: [ 'voucher_code' => $code ];
+	$ctx['booking_id'] = (int) ( $row['id'] ?? 0 );
 
 	$plan = mgk_package_plan_from_lesson_type( $lesson_type );
 	if ( $plan ) {
@@ -160,6 +161,23 @@ function mgk_engine_create_package_order( $args ) {
 	if ( ! $ok ) return new WP_Error( 'mgk_order_failed', 'Could not create the package order.', [ 'status' => 500 ] );
 
 	$booking_id = (int) $wpdb->insert_id;
+	if ( $applied_voucher !== '' && function_exists( 'mgk_voucher_reserve_for_booking' ) ) {
+		$booking = mgk_get_booking_row( $booking_id );
+		$ctx = function_exists( 'mgk_engine_quote_context' )
+			? mgk_engine_quote_context( [
+				'parent_user_id' => $parent_id,
+				'child_id'       => $child_id,
+				'voucher_code'   => $applied_voucher,
+			], $tutor_id )
+			: [ 'parent_user_id' => $parent_id ];
+		$ctx['booking_id'] = $booking_id;
+		$lifecycle = mgk_voucher_reserve_for_booking( $booking_id, $booking ?: $row_stub, $q, $ctx );
+		if ( empty( $lifecycle['ok'] ) ) {
+			$wpdb->delete( $bookings, [ 'id' => $booking_id ] );
+			return new WP_Error( 'mgk_voucher_' . sanitize_key( (string) ( $lifecycle['reason'] ?? 'unavailable' ) ),
+				(string) ( $lifecycle['message'] ?? 'Voucher is no longer available.' ), [ 'status' => 409 ] );
+		}
+	}
 	mgk_log_booking_event( $booking_id, 'PACKAGE_ORDER_CREATED', [
 		'new_status' => 'PENDING_PAYMENT', 'actor_type' => 'PARENT',
 		'metadata'   => [ 'plan' => $plan, 'child_id' => $child_id, 'total' => $q['total'] ],
@@ -228,15 +246,19 @@ function mgk_rest_create_package_order( WP_REST_Request $req ) {
 		return new WP_REST_Response( [ 'error' => $booking_id->get_error_code(), 'message' => $booking_id->get_error_message() ], $status );
 	}
 
-	// Hand off to the existing Stripe checkout (LIVE or MOCK). Its default
-	// success_url carries ?booking=CODE so S12 can resolve the package order.
-	if ( function_exists( 'mgk_stripe_create_checkout' ) ) {
-		$res = mgk_stripe_create_checkout( $booking_id );
-		if ( ! is_wp_error( $res ) && ! empty( $res['checkout_url'] ) ) {
-			return new WP_REST_Response( [ 'booking_id' => $booking_id, 'checkout_url' => $res['checkout_url'], 'mode' => $res['mode'] ?? '' ], 200 );
-		}
-	}
-	return new WP_REST_Response( [ 'booking_id' => $booking_id ], 200 );
+	// Hand off to the SHARED payment page (S11), where the payment method
+	// (PayNow QR / Card) and the order summary are clearly presented — the same
+	// page the trial flow uses. The S11 pay CTA then creates the Stripe/PayNow
+	// charge against this booking row. This keeps every paid service on one
+	// consistent checkout instead of jumping straight into Stripe.
+	$row        = mgk_get_booking_row( $booking_id );
+	$code       = $row ? (string) $row['booking_code'] : '';
+	$tutor_slug = $tutor ? $tutor['slug'] : ( $row ? get_post_field( 'post_name', (int) $row['tutor_post_id'] ) : '' );
+	$pay_url    = add_query_arg( array_filter( [
+		'booking' => $code ?: $booking_id,
+		'tutor'   => $tutor_slug,
+	] ), home_url( '/trial-pay/' ) );
+	return new WP_REST_Response( [ 'booking_id' => $booking_id, 'checkout_url' => $pay_url ], 200 );
 }
 
 /* ── Page provisioning: /buy-package/ ───────────────────────────────────── */
@@ -373,11 +395,14 @@ add_shortcode( 'mgk_buy_package', function () {
 	(function(){
 		var btn = document.querySelector('[data-mgk-buy-package]');
 		if(!btn||!window.fetch) return;
-		var rest=(window.mgkBookingData&&window.mgkBookingData.restUrl)||'/wp-json/mgk/v1/';
-		var nonce=(window.mgkBookingData&&window.mgkBookingData.nonce)||'';
 		btn.addEventListener('click',function(){
+			// Read rest/nonce at click time: mgkBookingData is localised with the
+			// footer scripts, AFTER this inline script in the body, so reading it
+			// at init would capture an empty nonce → "Cookie check failed".
+			var rest=(window.mgkBookingData&&window.mgkBookingData.restUrl)||'/wp-json/mgk/v1/';
+			var nonce=(window.mgkBookingData&&window.mgkBookingData.nonce)||'';
 			btn.disabled=true; var old=btn.textContent; btn.textContent='Redirecting to payment…';
-			fetch(rest+'booking/package-order',{method:'POST',headers:{'Content-Type':'application/json','X-WP-Nonce':nonce},
+			fetch(rest+'booking/package-order',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json','X-WP-Nonce':nonce},
 				body:JSON.stringify({tutor_slug:btn.getAttribute('data-tutor'),plan:btn.getAttribute('data-plan'),child_id:parseInt(btn.getAttribute('data-child'),10),voucher_code:btn.getAttribute('data-voucher')})})
 			.then(function(r){return r.json().then(function(j){return {ok:r.ok,body:j};});})
 			.then(function(res){

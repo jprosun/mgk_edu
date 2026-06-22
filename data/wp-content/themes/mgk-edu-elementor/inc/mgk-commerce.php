@@ -206,6 +206,25 @@ add_action( 'template_redirect', function () {
     }
 } );
 
+add_action( 'template_redirect', function () {
+    if ( ! is_user_logged_in() || ! function_exists( 'is_account_page' ) || ! is_account_page() ) {
+        return;
+    }
+
+    if ( function_exists( 'is_wc_endpoint_url' ) && is_wc_endpoint_url( 'customer-logout' ) ) {
+        return;
+    }
+
+    $user = wp_get_current_user();
+    if ( function_exists( 'mgk_is_passwordless_user' ) && mgk_is_passwordless_user( $user ) && ! current_user_can( 'edit_posts' ) ) {
+        $target = function_exists( 'mgk_passwordless_dashboard_url' )
+            ? mgk_passwordless_dashboard_url( $user )
+            : mgk_url( '/parent/dashboard/' );
+        wp_safe_redirect( $target );
+        exit;
+    }
+}, 1 );
+
 add_filter( 'body_class', function ( $classes ) {
     if ( function_exists( 'is_checkout' ) && is_checkout() ) {
         $classes[] = 'mgk-woo-checkout';
