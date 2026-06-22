@@ -18,6 +18,27 @@ $hidden = function ( $key ) use ( $atts ) {
 ?>
 <section class="mgk-tutor-dash" data-mgk-tutor-dashboard>
     <div class="mgk-tutor-dash__shell">
+        <?php
+        $mgk_log_notice = isset( $_GET['mgk_log'] ) ? sanitize_key( wp_unslash( $_GET['mgk_log'] ) ) : '';
+        if ( $mgk_log_notice ) :
+            $notices = [
+                'ok'       => [ 'ok',   'Lesson log submitted — the parent can now see it. ✓' ],
+                'dup'      => [ 'warn', 'That lesson was already logged.' ],
+                'denied'   => [ 'err',  'You can only log your own lessons.' ],
+                'badnonce' => [ 'err',  'Your session expired — please try again.' ],
+                'fail'     => [ 'err',  'Could not save the lesson log. Please try again.' ],
+                'notlesson' => [ 'err',  'That booking is a package purchase, not a lesson to log.' ],
+                'notended'  => [ 'warn', 'That lesson has not ended yet — log it after the scheduled end time.' ],
+                'notconfirmed' => [ 'err', 'Only confirmed paid lessons can be logged.' ],
+                'nochild'   => [ 'err',  'That booking is missing a student record. Ask agency ops to attach the child first.' ],
+            ];
+            $n = $notices[ $mgk_log_notice ] ?? null;
+            if ( $n ) :
+                $bg = [ 'ok' => '#eaf6ec;border:1px solid #b5e0bd;color:#1a7f37', 'warn' => '#fff5e6;border:1px solid #f5d8a8;color:#8a5a00', 'err' => '#fdecec;border:1px solid #f3b9b6;color:#b32d2e' ][ $n[0] ];
+                echo '<div style="margin:0 0 16px;padding:12px 16px;border-radius:9px;font-size:14px;background:' . esc_attr( $bg ) . '">' . esc_html( $n[1] ) . '</div>';
+            endif;
+        endif;
+        ?>
         <?php if ( ! $hidden( 'mobilebar' ) ) : ?>
             <header class="mgk-tutor-dash-mobilebar">
                 <strong><?php echo esc_html( $atts['mobile_greeting'] ?? '' ); ?></strong>
@@ -92,8 +113,15 @@ $hidden = function ( $key ) use ( $atts ) {
                 <article class="mgk-tutor-dash-card mgk-tutor-dash-logs">
                     <?php $section_label( $atts['sec_logs'] ?? '' ); ?>
                     <?php foreach ( (array) ( $ctx['logs'] ?? [] ) as $log ) : ?>
-                        <p class="<?php echo ! empty( $log['hot'] ) ? 'is-hot' : ''; ?>"><?php echo esc_html( $log['title'] ?? '' ); ?></p>
+                        <?php if ( ! empty( $log['url'] ) ) : ?>
+                            <p class="<?php echo ! empty( $log['hot'] ) ? 'is-hot' : ''; ?>"><a href="<?php echo esc_url( $log['url'] ); ?>"><?php echo esc_html( $log['title'] ?? '' ); ?></a></p>
+                        <?php else : ?>
+                            <p class="<?php echo ! empty( $log['hot'] ) ? 'is-hot' : ''; ?>"><?php echo esc_html( $log['title'] ?? '' ); ?></p>
+                        <?php endif; ?>
                     <?php endforeach; ?>
+                    <?php if ( ! empty( $ctx['is_real'] ) && empty( $ctx['logs'] ) ) : ?>
+                        <p>No pending logs — you’re all caught up. ✓</p>
+                    <?php endif; ?>
                 </article>
             <?php endif; ?>
 

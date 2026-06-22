@@ -3,6 +3,135 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 $atts = $args['atts'] ?? [];
 $ctx = $args['context'] ?? [];
+
+/* ── Live mode: the real, submittable apply form (visitors) ──────────────── */
+if ( ( $ctx['mode'] ?? '' ) === 'form' ) :
+    $subjects = (array) ( $ctx['subjects'] ?? [] );
+    $levels   = (array) ( $ctx['levels'] ?? [] );
+    $old      = (array) ( $ctx['old'] ?? [] );
+    $err      = (string) ( $ctx['error'] ?? '' );
+    $old_subjects = array_map( 'intval', (array) ( $old['subjects'] ?? [] ) );
+    $old_levels   = array_map( 'intval', (array) ( $old['levels'] ?? [] ) );
+    $ov = function ( $key ) use ( $old ) { return esc_attr( (string) ( $old[ $key ] ?? '' ) ); };
+?>
+<section class="mgk-tutor-apply mgk-tutor-apply--form">
+    <style>
+        .mgk-tutor-apply--form{--mgk-line:#e2e2e6;max-width:760px;margin:0 auto;padding:clamp(20px,4vw,40px) clamp(16px,3vw,24px)}
+        .mgk-apply-form__head h1{font-size:clamp(1.5rem,3.5vw,2.1rem);margin:0 0 .35em}
+        .mgk-apply-form__head p{color:#555;margin:0 0 1.5em;line-height:1.55}
+        .mgk-apply-form__err{background:#fde2e1;color:#b32d2e;border:1px solid #f3b6b4;border-radius:8px;padding:12px 14px;margin-bottom:18px}
+        .mgk-apply-form__grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+        .mgk-apply-form__field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
+        .mgk-apply-form__field--full{grid-column:1/-1}
+        .mgk-apply-form label{font-weight:600;font-size:.9rem}
+        .mgk-apply-form input[type=text],.mgk-apply-form input[type=email],.mgk-apply-form input[type=tel],.mgk-apply-form input[type=number],.mgk-apply-form textarea{
+            border:1px solid var(--mgk-line);border-radius:8px;padding:11px 12px;font:inherit;width:100%;box-sizing:border-box}
+        .mgk-apply-form textarea{min-height:96px;resize:vertical}
+        .mgk-apply-form__chips{display:flex;flex-wrap:wrap;gap:8px}
+        .mgk-apply-form__chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--mgk-line);border-radius:999px;padding:7px 13px;cursor:pointer;font-size:.88rem;user-select:none}
+        .mgk-apply-form__chip input{position:absolute;opacity:0;width:0;height:0}
+        .mgk-apply-form__chip:has(input:checked){background:#111;color:#fff;border-color:#111}
+        .mgk-apply-form__consent{display:flex;gap:10px;align-items:flex-start;background:#f7f7f8;border-radius:8px;padding:12px 14px;margin:6px 0 20px;font-size:.86rem;line-height:1.5}
+        .mgk-apply-form__consent input{margin-top:3px}
+        .mgk-apply-form__submit{background:#111;color:#fff;border:0;border-radius:8px;padding:14px 22px;font-size:1rem;font-weight:600;cursor:pointer;width:100%}
+        .mgk-apply-form__foot{text-align:center;margin-top:16px;color:#555;font-size:.9rem}
+        @media(max-width:600px){.mgk-apply-form__grid{grid-template-columns:1fr}}
+    </style>
+    <div class="mgk-apply-form__head">
+        <h1><?php echo esc_html( $atts['form_title'] ?? 'Apply to teach' ); ?></h1>
+        <p><?php echo esc_html( $atts['form_intro'] ?? '' ); ?></p>
+    </div>
+
+    <?php if ( $err ) : ?>
+        <div class="mgk-apply-form__err"><?php echo esc_html( $err ); ?></div>
+    <?php endif; ?>
+
+    <form class="mgk-apply-form" method="post" action="<?php echo esc_url( $ctx['action'] ?? admin_url( 'admin-post.php' ) ); ?>">
+        <input type="hidden" name="action" value="mgk_tutor_apply_submit">
+        <input type="hidden" name="mgk_tutor_apply_nonce" value="<?php echo esc_attr( $ctx['nonce'] ?? '' ); ?>">
+
+        <div class="mgk-apply-form__grid">
+            <div class="mgk-apply-form__field">
+                <label for="mgk_app_name"><?php echo esc_html( $atts['form_name_label'] ?? 'Full name' ); ?></label>
+                <input type="text" id="mgk_app_name" name="mgk_app_name" required value="<?php echo $ov( 'name' ); ?>">
+            </div>
+            <div class="mgk-apply-form__field">
+                <label for="mgk_app_email"><?php echo esc_html( $atts['form_email_label'] ?? 'Email' ); ?></label>
+                <input type="email" id="mgk_app_email" name="mgk_app_email" required autocomplete="email" value="<?php echo $ov( 'email' ); ?>">
+            </div>
+            <div class="mgk-apply-form__field">
+                <label for="mgk_app_phone"><?php echo esc_html( $atts['form_phone_label'] ?? 'Phone' ); ?></label>
+                <input type="tel" id="mgk_app_phone" name="mgk_app_phone" value="<?php echo $ov( 'phone' ); ?>">
+            </div>
+            <div class="mgk-apply-form__field">
+                <label for="mgk_app_rate"><?php echo esc_html( $atts['form_rate_label'] ?? 'Indicative rate (S$/hr)' ); ?></label>
+                <input type="number" id="mgk_app_rate" name="mgk_app_rate" min="0" step="1" value="<?php echo $ov( 'rate' ); ?>">
+            </div>
+        </div>
+
+        <?php if ( $subjects ) : ?>
+            <div class="mgk-apply-form__field mgk-apply-form__field--full">
+                <label><?php echo esc_html( $atts['form_subjects_label'] ?? 'Subjects you can teach' ); ?></label>
+                <div class="mgk-apply-form__chips">
+                    <?php foreach ( $subjects as $s ) : ?>
+                        <label class="mgk-apply-form__chip"><input type="checkbox" name="mgk_app_subjects[]" value="<?php echo esc_attr( (string) $s['id'] ); ?>" <?php checked( in_array( (int) $s['id'], $old_subjects, true ) ); ?>><?php echo esc_html( $s['name'] ); ?></label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <?php if ( $levels ) : ?>
+            <div class="mgk-apply-form__field mgk-apply-form__field--full">
+                <label><?php echo esc_html( $atts['form_levels_label'] ?? 'Levels' ); ?></label>
+                <div class="mgk-apply-form__chips">
+                    <?php foreach ( $levels as $l ) : ?>
+                        <label class="mgk-apply-form__chip"><input type="checkbox" name="mgk_app_levels[]" value="<?php echo esc_attr( (string) $l['id'] ); ?>" <?php checked( in_array( (int) $l['id'], $old_levels, true ) ); ?>><?php echo esc_html( $l['name'] ); ?></label>
+                    <?php endforeach; ?>
+                </div>
+            </div>
+        <?php endif; ?>
+
+        <div class="mgk-apply-form__grid">
+            <div class="mgk-apply-form__field">
+                <label for="mgk_app_university"><?php echo esc_html( $atts['form_university_label'] ?? 'University / institution' ); ?></label>
+                <input type="text" id="mgk_app_university" name="mgk_app_university" value="<?php echo $ov( 'university' ); ?>">
+            </div>
+            <div class="mgk-apply-form__field">
+                <label for="mgk_app_degree"><?php echo esc_html( $atts['form_degree_label'] ?? 'Highest qualification' ); ?></label>
+                <input type="text" id="mgk_app_degree" name="mgk_app_degree" value="<?php echo $ov( 'degree' ); ?>">
+            </div>
+            <div class="mgk-apply-form__field">
+                <label for="mgk_app_year"><?php echo esc_html( $atts['form_year_label'] ?? 'Year' ); ?></label>
+                <input type="text" id="mgk_app_year" name="mgk_app_year" value="<?php echo $ov( 'year' ); ?>">
+            </div>
+            <div class="mgk-apply-form__field">
+                <label for="mgk_app_payout"><?php echo esc_html( $atts['form_payout_label'] ?? 'Payout — optional' ); ?></label>
+                <input type="text" id="mgk_app_payout" name="mgk_app_payout" value="<?php echo $ov( 'payout' ); ?>">
+            </div>
+        </div>
+
+        <div class="mgk-apply-form__field mgk-apply-form__field--full">
+            <label for="mgk_app_experience"><?php echo esc_html( $atts['form_experience_label'] ?? 'Teaching experience & achievements' ); ?></label>
+            <textarea id="mgk_app_experience" name="mgk_app_experience"><?php echo esc_textarea( (string) ( $old['experience'] ?? '' ) ); ?></textarea>
+        </div>
+
+        <label class="mgk-apply-form__consent">
+            <input type="checkbox" name="mgk_app_consent" value="1" required>
+            <span><?php echo esc_html( $atts['consent_text'] ?? '' ); ?></span>
+        </label>
+
+        <button type="submit" class="mgk-apply-form__submit"><?php echo esc_html( $atts['form_submit_label'] ?? 'Submit application →' ); ?></button>
+
+        <p class="mgk-apply-form__foot"><?php echo esc_html( $atts['form_login_note'] ?? '' ); ?>
+            <a href="<?php echo esc_url( function_exists( 'mgk_get_tutor_login_url' ) ? mgk_get_tutor_login_url() : mgk_url( '/tutor/login/' ) ); ?>"><?php echo esc_html( $atts['form_login_link'] ?? 'Sign in' ); ?></a>
+        </p>
+    </form>
+</section>
+<?php
+    return;
+endif;
+
+/* ── Demo wizard (Elementor editor) ──────────────────────────────────────── */
 $step = max( 1, min( 6, (int) ( $ctx['step'] ?? 3 ) ) );
 $total = (int) ( $ctx['total_steps'] ?? 6 );
 $steps = (array) ( $ctx['steps'] ?? [] );
