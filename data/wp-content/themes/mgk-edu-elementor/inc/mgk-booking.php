@@ -129,6 +129,10 @@ function mgk_booking_create_lead( $payload ) {
 
     update_post_meta( $lead_id, 'mgk_lead_state', MGK_LEAD_CAPTURED );
     update_post_meta( $lead_id, 'mgk_lead_token', $token );
+    // BR-WP-03 matching SLA: agency target to send proposals within 6h.
+    $created_ts = current_time( 'timestamp', true );
+    update_post_meta( $lead_id, 'mgk_lead_created_at', gmdate( 'Y-m-d H:i:s', $created_ts ) );
+    update_post_meta( $lead_id, 'mgk_lead_sla_due_at', gmdate( 'Y-m-d H:i:s', $created_ts + ( defined( 'MGK_LEAD_SLA_HOURS' ) ? MGK_LEAD_SLA_HOURS : 6 ) * HOUR_IN_SECONDS ) );
 
     foreach ( $clean as $key => $value ) {
         update_post_meta( $lead_id, 'mgk_lead_' . $key, $value );
@@ -142,6 +146,50 @@ function mgk_booking_create_lead( $payload ) {
         'status' => MGK_LEAD_CAPTURED,
     ];
 }
+
+if ( ! defined( 'MGK_LEAD_SLA_HOURS' ) ) define( 'MGK_LEAD_SLA_HOURS', 6 ); // BR-WP-03
+
+/**
+ * Hourly SLA sweep (BR-WP-03): flag leads still un-proposed past their 6h
+ * sla_due_at, once, and notify the agency so the match target is enforced. Runs
+ * on the existing hourly cron (mgk_cron_expire_proposals).
+ */
+function mgk_lead_sla_sweep() {
+    if ( ! post_type_exists( 'mg_lead' ) ) return;
+    $pending_states = array_values( array_filter( [
+        defined( 'MGK_LEAD_CAPTURED' ) ? MGK_LEAD_CAPTURED : null,
+        defined( 'MGK_LEAD_QUALIFIED' ) ? MGK_LEAD_QUALIFIED : null,
+        defined( 'MGK_LEAD_MATCHED' ) ? MGK_LEAD_MATCHED : null,
+    ] ) );
+    if ( ! $pending_states ) return;
+
+    $now = gmdate( 'Y-m-d H:i:s', current_time( 'timestamp', true ) );
+    $leads = get_posts( [
+        'post_type'   => 'mg_lead',
+        'numberposts' => 50,
+        'fields'      => 'ids',
+        'meta_query'  => [
+            'relation' => 'AND',
+            [ 'key' => 'mgk_lead_sla_due_at', 'value' => $now, 'compare' => '<', 'type' => 'DATETIME' ],
+            [ 'key' => 'mgk_lead_sla_breached', 'compare' => 'NOT EXISTS' ],
+            [ 'key' => 'mgk_lead_state', 'value' => $pending_states, 'compare' => 'IN' ],
+        ],
+    ] );
+    foreach ( $leads as $lead_id ) {
+        update_post_meta( $lead_id, 'mgk_lead_sla_breached', 1 );
+        do_action( 'mgk_lead_sla_breached', (int) $lead_id );
+        // Best-effort agency alert (reuse WhatsApp expired-agency path if present).
+        if ( function_exists( 'mgk_notify_agency_expired' ) ) {
+            mgk_notify_agency_expired( (int) $lead_id );
+        } else {
+            $admin = get_option( 'admin_email' );
+            if ( $admin ) {
+                wp_mail( $admin, 'MGK: lead past 6h matching SLA', sprintf( 'Lead #%d has not been proposed within %dh.', $lead_id, MGK_LEAD_SLA_HOURS ) );
+            }
+        }
+    }
+}
+add_action( 'mgk_cron_expire_proposals', 'mgk_lead_sla_sweep' );
 
 /* ── Slot hold / release ─────────────────────────────────── */
 

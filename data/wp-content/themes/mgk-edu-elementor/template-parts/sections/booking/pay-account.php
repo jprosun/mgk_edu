@@ -17,6 +17,7 @@ $heading     = $a['heading']     ?? 'Where should we send your booking?';
 $subnote     = $a['subnote']     ?? 'WE’LL CREATE YOUR ACCOUNT AUTOMATICALLY — NO PASSWORD TO REMEMBER.';
 $placeholder = $a['placeholder'] ?? 'you.parent@example.sg';
 $otp_note    = $a['otp_note']    ?? ( $acc['otp_note'] ?? "We'll email a 6-digit OTP + magic link to verify. No password needed (FR-BOOK-07 / BR-22)." );
+$email_value = sanitize_email( (string) ( $acc['email'] ?? '' ) );
 ?>
 <section class="mgk-bk-card mgk-pay-account" data-reveal data-event="pay_account_view">
     <span class="mgk-bk-sectag"><?php echo esc_html( $tag ); ?></span>
@@ -27,6 +28,7 @@ $otp_note    = $a['otp_note']    ?? ( $acc['otp_note'] ?? "We'll email a 6-digit
         <span class="mgk-pay-field-icon" aria-hidden="true">✉</span>
         <input type="email" class="mgk-pay-input" name="mgk_pay_email"
                placeholder="<?php echo esc_attr( $placeholder ); ?>"
+               value="<?php echo esc_attr( $email_value ); ?>"
                autocomplete="email" inputmode="email"
                data-mgk-pay-email data-event="pay_email_input" />
     </label>

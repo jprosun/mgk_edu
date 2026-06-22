@@ -415,6 +415,12 @@ function mgk_pick_slot_part( $part, $atts = [] ) {
     if ( $part === 'pick-slot' ) {
         return mgk_render_part( 'template-parts/sections/booking/pick-slot', $atts );
     }
+    if ( $part === 'slot-hold-banner' && function_exists( 'is_page' ) && is_page( [ 'trial-pay', 'pay' ] ) && function_exists( 'mgk_get_pay_view' ) ) {
+        $pay_view = mgk_get_pay_view();
+        if ( ! empty( $pay_view['is_package_order'] ) || ( ( $pay_view['item_kind'] ?? '' ) === 'package' ) ) {
+            return '';
+        }
+    }
     $view = mgk_get_pick_slot_view();
     return mgk_render_part( 'template-parts/sections/booking/' . $part, array_merge( $view, $atts ) );
 }

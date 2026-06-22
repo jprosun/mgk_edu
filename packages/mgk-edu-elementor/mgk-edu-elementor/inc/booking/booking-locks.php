@@ -72,6 +72,8 @@ function mgk_engine_hold_slot( array $req ) {
 	$base_amount = 0.0;
 	$discount_json = null;
 	$voucher_code  = '';
+	$q             = null;
+	$qctx          = [];
 
 	if ( function_exists( 'mgk_quote_trial_for_tutor' ) && $lesson_type === 'TRIAL' ) {
 		$qctx = mgk_engine_quote_context( $req, $tutor_id );
@@ -175,6 +177,29 @@ function mgk_engine_hold_slot( array $req ) {
 		'actor_type' => 'PARENT',
 		'metadata'   => [ 'slot_key' => mgk_slot_key( $tutor_id, $start_utc, $end_utc ), 'expires_at_utc' => $expires ],
 	] );
+
+	// The booking/slot transaction is complete before voucher quota is reserved;
+	// VoucherRepository owns its own row-lock transaction. If the last voucher
+	// use was taken concurrently, keep the slot hold but restore the no-code quote.
+	if ( $voucher_code !== '' && is_array( $q ) && function_exists( 'mgk_voucher_reserve_for_booking' ) ) {
+		$row = mgk_get_booking_row( $booking_id );
+		$qctx['booking_id'] = $booking_id;
+		$lifecycle = mgk_voucher_reserve_for_booking( $booking_id, $row ?: [], $q, $qctx );
+		if ( empty( $lifecycle['ok'] ) ) {
+			$qctx['voucher_code'] = '';
+			$fallback = mgk_quote_trial_for_tutor( $tutor_id, $qctx );
+			$wpdb->update( $bookings, [
+				'price_amount'     => (float) $fallback['total'],
+				'base_amount'      => (float) $fallback['base'],
+				'discount_applied' => wp_json_encode( $fallback['discounts_applied'] ),
+				'voucher_code'     => null,
+				'updated_at_utc'   => mgk_booking_now_utc(),
+			], [ 'id' => $booking_id ] );
+			mgk_log_booking_event( $booking_id, 'VOUCHER_RESERVATION_FAILED', [
+				'metadata' => [ 'code' => $voucher_code, 'reason' => $lifecycle['reason'] ?? 'unavailable' ],
+			] );
+		}
+	}
 
 	// Reflect into the legacy lead state machine if a lead is attached.
 	if ( ! empty( $req['lead_id'] ) && function_exists( 'mgk_lead_transition' ) && function_exists( 'mgk_lead_can_transition' ) ) {
@@ -298,6 +323,7 @@ function mgk_engine_release_hold( $booking_id ) {
 	mgk_log_booking_event( $booking_id, 'HOLD_RELEASED', [
 		'old_status' => $row['status'], 'new_status' => 'EXPIRED', 'actor_type' => 'PARENT',
 	] );
+	do_action( 'mgk_booking_hold_released', $booking_id );
 	return true;
 }
 

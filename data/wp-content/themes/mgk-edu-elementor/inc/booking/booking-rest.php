@@ -268,6 +268,12 @@ function mgk_rest_create_stripe_checkout( WP_REST_Request $req ) {
 		$contact = mgk_lead_contact( (int) $row['lead_id'] );
 		$contact_email = sanitize_email( (string) ( $contact['email'] ?? '' ) );
 	}
+	if ( ( ! $contact_email || ! is_email( $contact_email ) ) && ! empty( $row['parent_user_id'] ) ) {
+		$parent = get_user_by( 'id', (int) $row['parent_user_id'] );
+		if ( $parent ) {
+			$contact_email = sanitize_email( (string) $parent->user_email );
+		}
+	}
 	if ( ! $contact_email || ! is_email( $contact_email ) ) {
 		return new WP_REST_Response( [
 			'error'   => 'email_required',
@@ -275,6 +281,9 @@ function mgk_rest_create_stripe_checkout( WP_REST_Request $req ) {
 		], 422 );
 	}
 
+	if ( $return_url ) {
+		$return_url = add_query_arg( 'booking', (string) $row['booking_code'], $return_url );
+	}
 	$res = mgk_stripe_create_checkout( $booking_id, $return_url );
 	if ( is_wp_error( $res ) ) {
 		$data = $res->get_error_data();
@@ -393,6 +402,30 @@ function mgk_rest_apply_voucher( WP_REST_Request $req ) {
 	}
 	$voucher_ok    = ( $code === '' ) ? null : ( $applied_code !== '' );
 	$voucher_error = ( $voucher_ok === false ) ? ( $q['voucher_note'] ?: 'Voucher not applicable' ) : '';
+
+	// Reserve quota only for the voucher the generic engine actually selected.
+	// This is deliberately before persisting the new charge amount: a quota race
+	// must leave the prior booking price untouched rather than display an unusable code.
+	if ( function_exists( 'mgk_voucher_reserve_for_booking' ) ) {
+		$reserve_ctx = function_exists( 'mgk_engine_quote_context' )
+			? mgk_engine_quote_context( [
+				'parent_user_id' => (int) ( $row['parent_user_id'] ?? 0 ),
+				'child_id'       => (int) ( $row['child_id'] ?? 0 ),
+				'lead_id'        => (int) ( $row['lead_id'] ?? 0 ),
+				'voucher_code'   => $applied_code,
+			], (int) ( $row['tutor_post_id'] ?? 0 ) )
+			: [];
+		$reserve_ctx['booking_id'] = $booking_id;
+		$lifecycle = mgk_voucher_reserve_for_booking( $booking_id, $row, $q, $reserve_ctx );
+		if ( empty( $lifecycle['ok'] ) ) {
+			return new WP_REST_Response( [
+				'error'         => 'voucher_' . sanitize_key( (string) ( $lifecycle['reason'] ?? 'unavailable' ) ),
+				'message'       => (string) ( $lifecycle['message'] ?? 'Voucher is no longer available.' ),
+				'voucher_ok'    => false,
+				'voucher_error' => (string) ( $lifecycle['message'] ?? 'Voucher is no longer available.' ),
+			], 409 );
+		}
+	}
 
 	// Persist the re-quoted price to the booking (the single source of charge).
 	global $wpdb;

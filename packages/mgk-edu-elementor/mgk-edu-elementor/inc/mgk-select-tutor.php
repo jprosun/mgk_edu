@@ -384,6 +384,12 @@ function mgk_select_tutor_part( $part, $atts = [] ) {
         return mgk_render_part( 'template-parts/sections/booking/select-tutor', $atts );
     }
     $view = mgk_get_select_tutor_view();
+    if ( function_exists( 'is_page' ) && is_page( [ 'trial-pay', 'pay' ] ) && function_exists( 'mgk_get_pay_view' ) ) {
+        $pay_view = mgk_get_pay_view();
+        if ( ( $pay_view['status'] ?? '' ) === 'ok' ) {
+            $view = $pay_view;
+        }
+    }
     return mgk_render_part( 'template-parts/sections/booking/' . $part, array_merge( $view, $atts ) );
 }
 

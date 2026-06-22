@@ -210,20 +210,16 @@ function mgk_stripe_create_checkout( $booking_id, $return_url = '' ) {
 
 	if ( mgk_stripe_is_live() ) {
 		$stripe_account = mgk_stripe_connected_account_id();
-		$params = [
-			'mode'        => 'payment',
-			'success_url' => add_query_arg( 'session_id', '{CHECKOUT_SESSION_ID}', $return_url ),
-			'cancel_url'  => $return_url,
-			'client_reference_id' => $row['booking_code'],
-			'metadata[booking_id]' => $booking_id,
-			'metadata[booking_code]' => $row['booking_code'],
-			'payment_intent_data[metadata][booking_id]' => $booking_id,
-			'payment_intent_data[metadata][booking_code]' => $row['booking_code'],
-			'line_items[0][quantity]' => 1,
-			'line_items[0][price_data][currency]' => $currency,
-			'line_items[0][price_data][unit_amount]' => $amount_minor,
-			'line_items[0][price_data][product_data][name]' => $product_name,
-		];
+		// Stripe param shape comes from the shared module (Money → correct smallest unit).
+		$money  = \Margick\Commerce\Domain\Money::ofMajor( (float) $amount, (string) $currency );
+		$params = \Margick\Commerce\Payment\Stripe\StripeGateway::checkoutParams(
+			$money,
+			$product_name,
+			$row['booking_code'],
+			add_query_arg( 'session_id', '{CHECKOUT_SESSION_ID}', $return_url ),
+			$return_url,
+			[ 'booking_id' => $booking_id, 'booking_code' => $row['booking_code'] ]
+		);
 		$resp = mgk_stripe_api_post( 'checkout/sessions', $params, [
 			'stripe_account' => $stripe_account,
 			'idempotency_key' => 'mgk_checkout_' . $booking_id . '_' . md5( $row['booking_code'] ),
@@ -234,10 +230,10 @@ function mgk_stripe_create_checkout( $booking_id, $return_url = '' ) {
 		$intent_id    = $resp['payment_intent'] ?? null;
 		$mode = $stripe_account ? 'connect' : 'direct';
 	} else {
-		// MOCK: synthesize a session id + a local "checkout" URL that simulates
-		// paying and then posting a mock webhook.
-		$session_id   = 'cs_mock_' . substr( md5( $booking_id . $now ), 0, 20 );
-		$intent_id    = 'pi_mock_' . substr( md5( 'pi' . $booking_id . $now ), 0, 20 );
+		// MOCK: shared deterministic synth (module) + local mock-pay URL (app routing stays here).
+		$mock         = \Margick\Commerce\Payment\Stripe\StripeGateway::mockSession( (string) $booking_id, (string) $now );
+		$session_id   = $mock['session_id'];
+		$intent_id    = $mock['intent_id'];
 		$checkout_url = add_query_arg( [
 			'mgk_mock_pay' => $session_id,
 			'booking'      => $row['booking_code'],
@@ -777,6 +773,13 @@ function mgk_stripe_ensure_webhook_endpoint() {
  * Implements the standard HMAC-SHA256 scheme so we don't need the SDK.
  */
 function mgk_stripe_verify_signature( $payload, $sig_header, $secret, $tolerance = 300 ) {
+	// Delegate to the shared, unit-tested module (single source for this security-critical check).
+	if ( class_exists( '\\Margick\\Commerce\\Payment\\Stripe\\WebhookSignature' ) ) {
+		return \Margick\Commerce\Payment\Stripe\WebhookSignature::verify(
+			(string) $payload, (string) $sig_header, (string) $secret, (int) $tolerance
+		);
+	}
+	// Fallback (module not vendored): original inline implementation.
 	if ( ! $secret || ! $sig_header ) return false;
 	$parts = [];
 	foreach ( explode( ',', $sig_header ) as $kv ) {

@@ -16,6 +16,7 @@ $context = (array) ( $a['context'] ?? [] );
 
 // Real engine booking id (carried from S10). Drives the live Stripe checkout.
 $booking_id = (int) ( $a['booking_id'] ?? ( $context['booking_id'] ?? 0 ) );
+$booking_ref = (string) ( $context['booking_code'] ?? ( $booking_id ?: '' ) );
 
 $due = (string) ( $bd['due'] ?? '$0.00' );
 
@@ -28,6 +29,7 @@ $pay_action = add_query_arg( array_filter( [
     'lead'       => $context['lead_token'] ?? '',
     'tutor'      => $context['tutor_slug'] ?? '',
     'slot'       => $context['slot_id'] ?? '',
+    'booking'    => $booking_ref,
     'mgk_action' => 'mock_pay',
 ] ), home_url( '/trial-pay/' ) );
 ?>

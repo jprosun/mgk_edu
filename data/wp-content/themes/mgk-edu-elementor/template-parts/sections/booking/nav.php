@@ -9,19 +9,20 @@ if ( ! defined( 'ABSPATH' ) ) exit;
 
 $args = (array) ( $args ?? [] );
 
-// Default secure label. On the slot page (S10) derive "BOOKING TRIAL WITH <tutor>"
-// from the locked tutor context so the nav stays in sync with the booking.
-$default_secure = '🔒 SECURE TRIAL BOOKING';
+// Default secure label, derived from the shared payable-item descriptor so the
+// label strings live in ONE place (inc/mgk-pay.php). An explicit `secure_label`
+// arg from the pay composite still wins via wp_parse_args below.
 $tutor_name = $args['tutor']['name'] ?? '';
+$is_package = ! empty( $args['is_package_order'] ) || ( ( $args['item_kind'] ?? '' ) === 'package' );
 // Fallback: resolve the tutor directly from the request when the injected view
 // didn't carry it (e.g. this nav widget rendered before the page view).
 if ( ! $tutor_name && function_exists( 'mgk_get_selected_tutor_for_booking' ) && function_exists( 'mgk_get_query_filter' ) ) {
     $t = mgk_get_selected_tutor_for_booking( mgk_get_query_filter( 'lead', '' ), sanitize_title( mgk_get_query_filter( 'tutor', '' ) ) );
     $tutor_name = $t['name'] ?? '';
 }
-if ( $tutor_name && preg_match( '/\b(Ms|Mr|Mrs|Dr)\.?\s+([A-Z][a-z]+)/', (string) $tutor_name, $m ) ) {
-    $default_secure = '🔒 BOOKING TRIAL WITH ' . strtoupper( $m[1] . ' ' . $m[2] );
-}
+$default_secure = function_exists( 'mgk_pay_secure_label' )
+    ? mgk_pay_secure_label( $is_package ? 'PACKAGE_8' : 'TRIAL', $tutor_name )
+    : '🔒 SECURE TRIAL BOOKING';
 
 $a = wp_parse_args( $args, [
     'utility'      => 'Secure booking · SG/EN',

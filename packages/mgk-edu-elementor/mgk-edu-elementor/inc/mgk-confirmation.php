@@ -510,11 +510,51 @@ function mgk_get_invoice_download_url( $invoice_id, $context = [] ) {
 /** Reschedule modal data: notice rule, count, slot options (BR-23 / FR-BOOK-09). */
 function mgk_get_reschedule_options( $context = [] ) {
     $context = (array) ( $context ?: mgk_get_confirm_context() );
+    $free  = (int) MGK_RESCHEDULE_FREE_HOURS;
+    $limit = (int) MGK_RESCHEDULE_LIMIT;
+    $row   = $context['booking_row'] ?? null;
+    $is_pkg = is_array( $row ) && function_exists( 'mgk_package_plan_from_lesson_type' )
+        && mgk_package_plan_from_lesson_type( (string) ( $row['lesson_type'] ?? '' ) );
+
+    // Real confirmed lesson booking → real available slots + real used count, so
+    // the modal posts a genuine new time to mgk_engine_reschedule_booking (BR-23).
+    if ( is_array( $row ) && (int) ( $row['id'] ?? 0 ) && ( $row['status'] ?? '' ) === 'CONFIRMED' && ! $is_pkg ) {
+        $bid       = (int) $row['id'];
+        $used      = function_exists( 'mgk_booking_event_count' ) ? mgk_booking_event_count( $bid, 'BOOKING_RESCHEDULED' ) : 0;
+        $hours_out = function_exists( 'mgk_hours_until_utc' ) ? mgk_hours_until_utc( (string) $row['start_at_utc'] ) : 99;
+        $eligible  = ( $used < $limit ) && ( $hours_out >= $free );
+
+        $slots = [];
+        if ( $eligible && function_exists( 'mgk_engine_available_slots' ) ) {
+            $dur = max( 30, (int) round( ( strtotime( $row['end_at_utc'] . ' UTC' ) - strtotime( $row['start_at_utc'] . ' UTC' ) ) / 60 ) );
+            $av  = mgk_engine_available_slots( (int) $row['tutor_post_id'], gmdate( 'Y-m-d' ), gmdate( 'Y-m-d', time() + 14 * DAY_IN_SECONDS ), $dur );
+            foreach ( (array) ( $av['slots'] ?? [] ) as $sl ) {
+                if ( ( $sl['slot_key'] ?? '' ) === ( $row['slot_key'] ?? '' ) ) continue; // skip current time
+                $slots[] = [
+                    'id'    => (string) ( $sl['slot_key'] ?? '' ),
+                    'label' => trim( ( $sl['display_day'] ?? '' ) . ' · ' . trim( substr( (string) ( $sl['display_start'] ?? '' ), 11 ) ) ),
+                    'start' => gmdate( 'Y-m-d H:i:s', strtotime( (string) $sl['start_at_utc'] ) ),
+                    'end'   => gmdate( 'Y-m-d H:i:s', strtotime( (string) $sl['end_at_utc'] ) ),
+                ];
+                if ( count( $slots ) >= 8 ) break;
+            }
+        }
+        $note = $eligible
+            ? sprintf( '≥%dh notice = free · this is reschedule %d of %d.', $free, $used + 1, $limit )
+            : ( $used >= $limit
+                ? sprintf( 'You’ve used all %d reschedules for this lesson.', $limit )
+                : sprintf( 'Reschedule needs ≥%dh notice — your lesson is in %dh.', $free, max( 0, $hours_out ) ) );
+
+        return [
+            'free_hours' => $free, 'used' => $used, 'limit' => $limit, 'eligible' => $eligible,
+            'note' => $note, 'config_note' => '', 'reheld_min' => 10, 'slots' => $slots,
+        ];
+    }
+
+    // Demo/preview (no real booking) — slots carry no start/end so the JS no-ops.
     return [
-        'free_hours'  => (int) MGK_RESCHEDULE_FREE_HOURS,
-        'used'        => 1,
-        'limit'       => (int) MGK_RESCHEDULE_LIMIT,
-        'note'        => sprintf( '≥%dh notice = free · this is reschedule %d of %d for this package.', MGK_RESCHEDULE_FREE_HOURS, 1, MGK_RESCHEDULE_LIMIT ),
+        'free_hours'  => $free, 'used' => 1, 'limit' => $limit, 'eligible' => false,
+        'note'        => sprintf( '≥%dh notice = free · this is reschedule %d of %d.', $free, 1, $limit ),
         'config_note' => 'per-tenant config · PM to confirm limits',
         'reheld_min'  => 10,
         'slots'       => [
@@ -610,6 +650,7 @@ function mgk_get_confirmation_view() {
     return [
         'status'       => $status, // paid | pending | failed
         'is_package'   => (bool) $is_package,
+        'booking_id'   => (int) ( $context['booking_id'] ?? 0 ),
         'context'      => $context,
         'confirmation' => mgk_get_booking_confirmation( $context ),
         'email'        => mgk_get_confirm_email( $context ),

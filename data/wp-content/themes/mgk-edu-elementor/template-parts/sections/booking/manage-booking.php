@@ -19,6 +19,8 @@ $cal = (array) ( $a['calendar'] ?? [] );
 
 $reschedule_label = $a['reschedule_label'] ?? '↻ Reschedule';
 $cancel_label     = $a['cancel_label']     ?? '× Cancel & refund';
+$booking_id       = (int) ( $a['booking_id'] ?? 0 );
+$dashboard_url    = (string) ( $a['urls']['dashboard'] ?? home_url( '/parent/dashboard/' ) );
 
 if ( ! empty( $a['is_package'] ) ) :
     $bookings_url = (string) ( $a['urls']['bookings'] ?? home_url( '/my-bookings/' ) );
@@ -30,7 +32,9 @@ if ( ! empty( $a['is_package'] ) ) :
     return;
 endif;
 ?>
-<section class="mgk-cf-manage" data-event="confirm_manage_view">
+<section class="mgk-cf-manage" data-event="confirm_manage_view"
+         data-booking-id="<?php echo esc_attr( $booking_id ); ?>"
+         data-dashboard="<?php echo esc_url( $dashboard_url ); ?>">
     <button type="button" class="mgk-cf-manage-btn" data-mgk-modal-open="reschedule"
             data-event="reschedule_click"><?php echo esc_html( $reschedule_label ); ?></button>
     <button type="button" class="mgk-cf-manage-btn" data-mgk-modal-open="cancel-refund"
@@ -58,6 +62,7 @@ endif;
                 <?php endforeach; ?>
             </div>
             <p class="mgk-cf-refund-note">⚠ <?php echo esc_html( $rf['note'] ?? '' ); ?></p>
+            <p class="mgk-cf-cancel-fb" data-mgk-cancel-fb hidden style="font-size:13px;margin:8px 0 0"></p>
             <div class="mgk-cf-modal__actions">
                 <button type="button" class="mgk-cf-btn-outline" data-mgk-modal-close>Keep booking</button>
                 <button type="button" class="mgk-cf-btn-danger" data-mgk-confirm-cancel
@@ -83,11 +88,17 @@ endif;
                 <?php foreach ( (array) ( $rs['slots'] ?? [] ) as $i => $sl ) : ?>
                 <button type="button" class="mgk-cf-resched-slot<?php echo $i === 0 ? ' is-active' : ''; ?>"
                         data-mgk-resched-slot="<?php echo esc_attr( $sl['id'] ?? '' ); ?>"
+                        data-start="<?php echo esc_attr( $sl['start'] ?? '' ); ?>"
+                        data-end="<?php echo esc_attr( $sl['end'] ?? '' ); ?>"
                         <?php echo $i === 0 ? 'aria-pressed="true"' : ''; ?>><?php echo esc_html( $sl['label'] ?? '' ); ?></button>
                 <?php endforeach; ?>
+                <?php if ( empty( $rs['slots'] ) ) : ?>
+                <p class="mgk-cf-modal__sub">No open times in the next 2 weeks — message the agency to arrange one.</p>
+                <?php endif; ?>
             </div>
+            <p class="mgk-cf-resched-fb" data-mgk-resched-fb hidden style="font-size:13px;margin:8px 0 0"></p>
             <button type="button" class="mgk-cf-btn-danger mgk-cf-btn-block" data-mgk-confirm-resched
-                    data-event="reschedule_confirm">Confirm new time</button>
+                    data-event="reschedule_confirm"<?php echo empty( $rs['slots'] ) ? ' disabled' : ''; ?>>Confirm new time</button>
         </div>
     </div>
 </div>

@@ -19,13 +19,12 @@ $part = function ( $slug, $extra = [] ) use ( $view, $a ) {
     return mgk_render_part( 'template-parts/sections/booking/' . $slug, array_merge( $view, (array) $extra ) );
 };
 
-// Nav (centre label = booking-with-tutor, same as S10).
-$tutor_name = $view['tutor']['name'] ?? '';
-$with = 'BOOKING TRIAL';
-if ( preg_match( '/\b(Ms|Mr|Mrs|Dr)\.?\s+([A-Z][a-z]+)/', (string) $tutor_name, $m ) ) {
-    $with = 'BOOKING TRIAL WITH ' . strtoupper( $m[1] . ' ' . $m[2] );
-}
-echo $part( 'nav', [ 'secure_label' => '🔒 ' . $with ] ); // phpcs:ignore
+// Nav (centre label = the payable item + tutor, from the shared descriptor).
+$secure_label = $view['secure_label']
+    ?? ( function_exists( 'mgk_pay_secure_label' )
+        ? mgk_pay_secure_label( ( $view['item_kind'] ?? '' ) === 'package' ? 'PACKAGE_8' : 'TRIAL', $view['tutor']['name'] ?? '' )
+        : '🔒 SECURE CHECKOUT' );
+echo $part( 'nav', [ 'secure_label' => $secure_label ] ); // phpcs:ignore
 
 // ── Error / non-ok states ───────────────────────────────────
 if ( ( $view['status'] ?? '' ) !== 'ok' ) {
@@ -54,7 +53,9 @@ if ( ( $view['status'] ?? '' ) !== 'ok' ) {
 
 // ── OK state ────────────────────────────────────────────────
 echo $part( 'booking-progress', [ 'current' => 3 ] ); // phpcs:ignore
-echo $part( 'slot-hold-banner', $a );                  // phpcs:ignore
+if ( empty( $view['is_package_order'] ) ) {
+    echo $part( 'slot-hold-banner', $a );              // phpcs:ignore
+}
 ?>
 <main class="mgk-bk-main mgk-bk-main--pay" data-mgk-pay data-reveal-root>
     <div class="mgk-shell">

@@ -22,6 +22,11 @@ $dur_h    = (string) ( $bd['duration_h'] ?? '1.5' );
 $tutor_short = $tutor['name'] ?? 'your tutor';
 $slot_label  = $selected['label'] ?? '';
 $slot_line   = trim( ( $day_lbl ?: '' ) . ( $slot_label ? ' · ' . $slot_label : '' ) . ' · Online' );
+$item_kind   = (string) ( $a['item_kind'] ?? '' );
+$item_label  = $item_kind === 'package' ? 'Package' : 'Trial';
+if ( $item_kind === 'package' ) {
+    $slot_line = trim( ( $day_lbl ?: 'Lesson package' ) . ( $slot_label ? ' · ' . $slot_label : '' ) );
+}
 
 $tag      = $a['section_tag']    ?? 'SEC 4 Price breakdown';
 $heading  = $a['heading']        ?? 'Order summary';
@@ -39,7 +44,7 @@ $voucher_code = (string) ( $bd['voucher_code'] ?? '' );
     <div class="mgk-pay-summary-tutor">
         <span class="mgk-pay-summary-avatar"<?php echo $avatar ? ' style="background-image:url(' . esc_url( $avatar ) . ')"' : ''; ?> aria-hidden="true"></span>
         <span class="mgk-pay-summary-tutor-info">
-            <span class="mgk-pay-summary-tutor-name"><strong>Trial</strong> · <?php echo esc_html( $tutor_short ); ?></span>
+            <span class="mgk-pay-summary-tutor-name"><strong><?php echo esc_html( $item_label ); ?></strong> · <?php echo esc_html( $tutor_short ); ?></span>
             <span class="mgk-pay-summary-tutor-slot"><?php echo esc_html( $slot_line ?: ( $dur_h . 'h trial · Online' ) ); ?></span>
         </span>
     </div>
