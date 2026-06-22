@@ -71,7 +71,7 @@ $prompt_meta = $state === 'post-package' && ! empty( $atts['package_subline'] )
         <?php endif; ?>
 
         <?php if ( $show_post_trial ) : ?>
-            <form class="mgk-parent-review-form mgk-parent-review-post-trial" method="post" action="<?php echo esc_url( $form_action ); ?>">
+            <form class="mgk-parent-review-form mgk-parent-review-post-trial" method="post" enctype="multipart/form-data" action="<?php echo esc_url( $form_action ); ?>">
                 <?php $section_label( 'post_trial' ); ?>
                 <?php wp_nonce_field( 'mgk_parent_review_submit', 'mgk_parent_review_nonce' ); ?>
                 <input type="hidden" name="action" value="mgk_parent_review_submit">
@@ -93,7 +93,7 @@ $prompt_meta = $state === 'post-package' && ! empty( $atts['package_subline'] )
         <?php endif; ?>
 
         <?php if ( $show_post_package ) : ?>
-            <form class="mgk-parent-review-form mgk-parent-review-post-package" method="post" action="<?php echo esc_url( $form_action ); ?>">
+            <form class="mgk-parent-review-form mgk-parent-review-post-package" method="post" enctype="multipart/form-data" action="<?php echo esc_url( $form_action ); ?>">
                 <?php $section_label( 'post_package' ); ?>
                 <?php wp_nonce_field( 'mgk_parent_review_submit', 'mgk_parent_review_nonce' ); ?>
                 <input type="hidden" name="action" value="mgk_parent_review_submit">
@@ -126,10 +126,11 @@ $prompt_meta = $state === 'post-package' && ! empty( $atts['package_subline'] )
                         <?php echo esc_html( $atts['photo_heading'] ?? '' ); ?>
                         <span><?php echo esc_html( $atts['photo_optional'] ?? '' ); ?></span>
                     </label>
-                    <button type="button" class="mgk-parent-review-photo">
+                    <label class="mgk-parent-review-photo" style="cursor:pointer;display:inline-flex">
                         <span aria-hidden="true"><?php echo esc_html( $atts['photo_label'] ?? '' ); ?></span>
                         <em><?php echo esc_html( $atts['photo_note'] ?? '' ); ?></em>
-                    </button>
+                        <input type="file" name="mgk_review_photo" accept="image/*" style="display:none">
+                    </label>
                 </div>
                 <button type="submit" class="mgk-parent-review-submit mgk-parent-review-submit--full"><?php echo esc_html( $atts['package_submit_label'] ?? ( $atts['submit_label'] ?? '' ) ); ?></button>
             </form>

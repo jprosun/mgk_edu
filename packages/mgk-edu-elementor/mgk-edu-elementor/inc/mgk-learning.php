@@ -233,7 +233,9 @@ function mgk_child_learning_stats( $child_id ) {
 	$enr = mgk_enrolment_for_child( $child_id );
 
 	$lessons = $enr ? mgk_lessons_for_enrolment( $enr ) : [];
-	$attended = array_values( array_filter( $lessons, function ( $l ) { return $l['attendance'] === 'ATTENDED'; } ) );
+	$attended = array_values( array_filter( $lessons, function ( $l ) {
+		return in_array( $l['attendance'], [ 'ATTENDED', 'LATE' ], true );
+	} ) );
 
 	$total   = $enr ? (int) get_post_meta( $enr, 'mgk_enr_lessons_total', true ) : 0;
 	$done    = count( $attended );

@@ -51,7 +51,25 @@ function mgk_parent_review_teacher_context() {
     ];
 }
 
+/** Count ATTENDED/LATE logged lessons for a child with a given tutor (BR-20 gate). */
+function mgk_review_attended_count( $child_id, $tutor_id ) {
+    $child_id = (int) $child_id; $tutor_id = (int) $tutor_id;
+    if ( ! $child_id || ! $tutor_id || ! post_type_exists( 'mg_lesson' ) ) return 0;
+    $q = get_posts( [
+        'post_type'   => 'mg_lesson',
+        'numberposts' => -1,
+        'fields'      => 'ids',
+        'meta_query'  => [
+            [ 'key' => 'mgk_lesson_child_id', 'value' => $child_id ],
+            [ 'key' => 'mgk_lesson_tutor_id', 'value' => $tutor_id ],
+            [ 'key' => 'mgk_lesson_attendance', 'value' => [ 'ATTENDED', 'LATE' ], 'compare' => 'IN' ],
+        ],
+    ] );
+    return count( $q );
+}
+
 function mgk_parent_review_lesson_context( $teacher ) {
+    // Demo fallback (preview / not a signed-in parent).
     $context = [
         'child_name'       => 'Emma',
         'subject'          => 'P5 Math',
@@ -59,7 +77,38 @@ function mgk_parent_review_lesson_context( $teacher ) {
         'package_meta'     => 'PKG 16 · 16 LESSONS · 14 DONE',
         'lessons_logged'   => 1,
         'parent_name'      => 'Verified Parent',
+        'child_id'         => 0,
     ];
+
+    $tid = (int) ( $teacher['id'] ?? 0 );
+    if ( $tid && function_exists( 'mgk_is_parent_user' ) && mgk_is_parent_user() ) {
+        // REAL gate (BR-20): the parent may review only after ≥1 ATTENDED lesson
+        // logged for one of their children with THIS tutor.
+        $uid      = get_current_user_id();
+        $children = function_exists( 'mgk_parent_children' ) ? mgk_parent_children( $uid ) : [];
+        $best_child = 0; $best_count = 0;
+        foreach ( $children as $c ) {
+            $cid = (int) ( is_object( $c ) ? $c->ID : $c );
+            $n   = mgk_review_attended_count( $cid, $tid );
+            if ( $n > $best_count ) { $best_count = $n; $best_child = $cid; }
+        }
+        $cname = $best_child ? ( get_post_meta( $best_child, 'mgk_child_full_name', true ) ?: get_the_title( $best_child ) )
+            : ( $children ? ( get_post_meta( (int) ( is_object( $children[0] ) ? $children[0]->ID : $children[0] ), 'mgk_child_full_name', true ) ?: 'your child' ) : 'your child' );
+        $subject = '';
+        if ( $best_child && function_exists( 'mgk_enrolment_for_child' ) ) {
+            $enr = mgk_enrolment_for_child( $best_child );
+            if ( $enr ) $subject = (string) get_post_meta( $enr, 'mgk_enr_subject', true );
+        }
+        $pname = function_exists( 'mgk_dashboard_parent_name' ) ? mgk_dashboard_parent_name( $uid ) : 'Verified Parent';
+
+        $context = array_merge( $context, [
+            'child_name'     => $cname,
+            'subject'        => $subject ?: $context['subject'],
+            'lessons_logged' => $best_count,
+            'parent_name'    => $pname,
+            'child_id'       => $best_child,
+        ] );
+    }
 
     return apply_filters( 'mgk_parent_review_lesson_context', $context, $teacher );
 }
@@ -204,7 +253,23 @@ function mgk_handle_parent_review_submit() {
         update_post_meta( $review_id, 'mgk_review_patience', max( 1, min( 5, (float) ( $_POST['mgk_review_patience'] ?? $rating ) ) ) );
         update_post_meta( $review_id, 'mgk_review_punctuality', max( 1, min( 5, (float) ( $_POST['mgk_review_punctuality'] ?? $rating ) ) ) );
         update_post_meta( $review_id, 'mgk_review_communication', max( 1, min( 5, (float) ( $_POST['mgk_review_communication'] ?? $rating ) ) ) );
-        update_post_meta( $review_id, 'mgk_review_photo_count', '0' );
+
+        // Optional photo upload (real). Image-only, attached to the review post.
+        $photo_count = 0;
+        if ( ! empty( $_FILES['mgk_review_photo']['name'] ) && empty( $_FILES['mgk_review_photo']['error'] ) ) {
+            $type = wp_check_filetype( (string) $_FILES['mgk_review_photo']['name'] );
+            if ( strpos( (string) $type['type'], 'image/' ) === 0 ) {
+                require_once ABSPATH . 'wp-admin/includes/image.php';
+                require_once ABSPATH . 'wp-admin/includes/file.php';
+                require_once ABSPATH . 'wp-admin/includes/media.php';
+                $att = media_handle_upload( 'mgk_review_photo', $review_id );
+                if ( ! is_wp_error( $att ) ) {
+                    $photo_count = 1;
+                    update_post_meta( $review_id, 'mgk_review_photo_id', (int) $att );
+                }
+            }
+        }
+        update_post_meta( $review_id, 'mgk_review_photo_count', (string) $photo_count );
     }
 
     wp_safe_redirect( add_query_arg( [
