@@ -39,11 +39,19 @@ function mgk_magic_link_url( $user_id, $redirect = '' ) {
 	$user_id = (int) $user_id;
 	if ( ! $user_id ) return '';
 	$token = wp_generate_password( 32, false, false );
+	$user = get_user_by( 'id', $user_id );
+	$roles = $user ? (array) $user->roles : [];
+	$is_tutor_link = ( $redirect && strpos( (string) $redirect, '/tutor/' ) !== false )
+		|| ( defined( 'MGK_TUTOR_ROLE' ) && in_array( MGK_TUTOR_ROLE, $roles, true ) && ( ! defined( 'MGK_PARENT_ROLE' ) || ! in_array( MGK_PARENT_ROLE, $roles, true ) ) );
+	$fail_url = add_query_arg( 'mgk_auth', 'expired', mgk_url( $is_tutor_link ? '/tutor/login/' : '/login/' ) );
 	set_transient( 'mgk_ml_' . mgk_auth_hash( $token ), [
 		'user_id'  => $user_id,
 		'redirect' => esc_url_raw( $redirect ?: mgk_cta_url( 'dashboard' ) ),
+		'fail'     => esc_url_raw( $fail_url ),
 	], MGK_MAGIC_TTL );
-	return add_query_arg( 'mgk_ml', $token, mgk_url( '/auth/' ) );
+	$args = [ 'mgk_ml' => $token ];
+	if ( $is_tutor_link ) $args['mgk_role'] = 'tutor';
+	return add_query_arg( $args, mgk_url( '/auth/' ) );
 }
 
 /* ── Magic link: consume (?mgk_ml=… on any URL) ──────────────────────────── */
@@ -52,19 +60,45 @@ add_action( 'template_redirect', function () {
 	if ( empty( $_GET['mgk_ml'] ) ) return;
 
 	$token = sanitize_text_field( wp_unslash( $_GET['mgk_ml'] ) );
-	$key   = 'mgk_ml_' . mgk_auth_hash( $token );
-	$data  = get_transient( $key );
-	$fail  = mgk_url( '/login/?mgk_auth=expired' );
-
-	if ( ! is_array( $data ) || empty( $data['user_id'] ) ) {
+	$hash  = mgk_auth_hash( $token );
+	$key   = 'mgk_ml_' . $hash;
+	$lock  = 'mgk_ml_lock_' . $hash;
+	$role_hint = isset( $_GET['mgk_role'] ) ? sanitize_key( wp_unslash( $_GET['mgk_role'] ) ) : '';
+	$switch_browser = ! empty( $_GET['mgk_switch'] );
+	$fail = add_query_arg( 'mgk_auth', 'expired', mgk_url( $role_hint === 'tutor' ? '/tutor/login/' : '/login/' ) );
+	if ( ! add_option( $lock, time(), '', false ) ) {
 		wp_safe_redirect( $fail ); exit;
 	}
-	delete_transient( $key ); // single-use: burn it before logging in
+
+	$data = get_transient( $key );
+	if ( is_array( $data ) && ! empty( $data['fail'] ) ) {
+		$fail = esc_url_raw( $data['fail'] );
+	}
+
+	if ( ! is_array( $data ) || empty( $data['user_id'] ) ) {
+		delete_option( $lock );
+		wp_safe_redirect( $fail ); exit;
+	}
 
 	$user = get_user_by( 'id', (int) $data['user_id'] );
-	if ( ! $user ) { wp_safe_redirect( $fail ); exit; }
+	if ( ! $user ) {
+		delete_option( $lock );
+		wp_safe_redirect( $fail ); exit;
+	}
+
+	// WordPress has one auth cookie per site. If an agency admin clicks a
+	// parent/tutor link in the same browser, wp_set_auth_cookie() would replace
+	// their admin cookie with the front-end user and lock wp-admin out.
+	if ( ! $switch_browser && function_exists( 'mgk_auth_current_user_is_staff' ) && mgk_auth_current_user_is_staff() && get_current_user_id() !== (int) $user->ID ) {
+		delete_option( $lock );
+		$return = isset( $_SERVER['REQUEST_URI'] ) ? home_url( sanitize_text_field( wp_unslash( $_SERVER['REQUEST_URI'] ) ) ) : '';
+		wp_safe_redirect( function_exists( 'mgk_auth_staff_guard_url' ) ? mgk_auth_staff_guard_url( $role_hint, $return ) : $fail );
+		exit;
+	}
 
 	// Establish a (filtered) 30-day session.
+	delete_transient( $key ); // single-use: burn it only when login is allowed
+	delete_option( $lock );
 	wp_set_current_user( $user->ID );
 	wp_set_auth_cookie( $user->ID, true );
 	update_user_meta( $user->ID, 'mgk_parent_email_verified', 1 ); // clicking proves email control
@@ -76,9 +110,64 @@ add_action( 'template_redirect', function () {
 
 /* ── Session: 30-day cookie + 24h idle auto-logout ───────────────────────── */
 
+/** Roles that get the long, idle-managed passwordless session (parents + tutors). */
+function mgk_passwordless_roles() {
+	$roles = [ MGK_PARENT_ROLE ];
+	if ( defined( 'MGK_TUTOR_ROLE' ) ) $roles[] = MGK_TUTOR_ROLE;
+	return $roles;
+}
+
+/** True when the user holds any passwordless (front-end) role. */
+function mgk_is_passwordless_user( $u ) {
+	return $u && ! empty( array_intersect( mgk_passwordless_roles(), (array) $u->roles ) );
+}
+
+/** True for agency/staff wp-admin accounts. */
+function mgk_auth_current_user_is_staff() {
+	$u = wp_get_current_user();
+	return $u && $u->exists() && user_can( $u, 'edit_posts' );
+}
+
+/** Where to send staff when they click a front-end magic link in the admin browser. */
+function mgk_auth_staff_guard_url( $role_hint = '', $return = '' ) {
+	$path = $role_hint === 'tutor' ? '/tutor/login/' : '/login/';
+	$args = [ 'mgk_auth' => 'staff_guard' ];
+	if ( $return !== '' ) {
+		$args['mgk_return'] = rawurlencode( esc_url_raw( $return ) );
+	}
+	return add_query_arg( $args, mgk_url( $path ) );
+}
+
+/** Dashboard for a front-end passwordless user. */
+function mgk_passwordless_dashboard_url( $u = null ) {
+	$u = $u ?: wp_get_current_user();
+	$roles = $u ? (array) $u->roles : [];
+	if ( defined( 'MGK_TUTOR_ROLE' ) && in_array( MGK_TUTOR_ROLE, $roles, true ) && ! in_array( MGK_PARENT_ROLE, $roles, true ) ) {
+		return function_exists( 'mgk_get_tutor_dashboard_url' ) ? mgk_get_tutor_dashboard_url() : mgk_url( '/tutor/dashboard/' );
+	}
+	return function_exists( 'mgk_cta_url' ) ? mgk_cta_url( 'dashboard' ) : mgk_url( '/parent/dashboard/' );
+}
+
+/** Front-end parents/tutors should never fall into wp-admin. */
+add_action( 'admin_init', function () {
+	if ( ! is_user_logged_in() || ( defined( 'DOING_AJAX' ) && DOING_AJAX ) ) return;
+	if ( ! empty( $GLOBALS['pagenow'] ) && in_array( $GLOBALS['pagenow'], [ 'admin-post.php', 'admin-ajax.php' ], true ) ) return;
+
+	$u = wp_get_current_user();
+	if ( mgk_is_passwordless_user( $u ) && ! mgk_auth_current_user_is_staff() ) {
+		wp_safe_redirect( mgk_passwordless_dashboard_url( $u ) );
+		exit;
+	}
+}, 0 );
+
+add_filter( 'show_admin_bar', function ( $show ) {
+	$u = wp_get_current_user();
+	return ( mgk_is_passwordless_user( $u ) && ! mgk_auth_current_user_is_staff() ) ? false : $show;
+}, 20 );
+
 add_filter( 'auth_cookie_expiration', function ( $length, $user_id, $remember ) {
 	$u = get_user_by( 'id', $user_id );
-	if ( $u && in_array( MGK_PARENT_ROLE, (array) $u->roles, true ) ) {
+	if ( mgk_is_passwordless_user( $u ) ) {
 		return MGK_SESSION_DAYS * DAY_IN_SECONDS;
 	}
 	return $length;
@@ -92,7 +181,7 @@ function mgk_session_touch( $user_id ) {
 add_action( 'init', function () {
 	if ( ! is_user_logged_in() ) return;
 	$u = wp_get_current_user();
-	if ( ! in_array( MGK_PARENT_ROLE, (array) $u->roles, true ) ) return;
+	if ( ! mgk_is_passwordless_user( $u ) ) return;
 
 	// Never redirect during REST / AJAX / cron — that would break the call.
 	$is_infra = wp_doing_ajax() || wp_doing_cron() || ( defined( 'REST_REQUEST' ) && REST_REQUEST );
@@ -102,8 +191,11 @@ add_action( 'init', function () {
 		// Idle past 24h: force the logout+redirect only on a real front-end page
 		// view. On infra requests just stop extending — the next page view bounces.
 		if ( ! $is_infra && ! is_admin() ) {
+			$idle_login = ( defined( 'MGK_TUTOR_ROLE' ) && in_array( MGK_TUTOR_ROLE, (array) $u->roles, true ) && ! in_array( MGK_PARENT_ROLE, (array) $u->roles, true ) )
+				? mgk_url( '/tutor/login/?mgk_auth=idle' )
+				: mgk_url( '/login/?mgk_auth=idle' );
 			wp_logout();
-			wp_safe_redirect( mgk_url( '/login/?mgk_auth=idle' ) );
+			wp_safe_redirect( $idle_login );
 			exit;
 		}
 		return;
@@ -142,6 +234,9 @@ function mgk_otp_verify( $user_id, $code ) {
 		$rec['tries']++;
 		set_transient( 'mgk_otp_' . $user_id, $rec, MGK_OTP_TTL );
 		return new WP_Error( 'mgk_otp_bad', 'Incorrect code.' );
+	}
+	if ( mgk_auth_current_user_is_staff() && get_current_user_id() !== $user_id ) {
+		return new WP_Error( 'mgk_staff_session', 'You are signed in as staff. Use another browser/profile for parent login so wp-admin stays signed in.' );
 	}
 	delete_transient( 'mgk_otp_' . $user_id );
 	update_user_meta( $user_id, 'mgk_parent_phone_verified', 1 );

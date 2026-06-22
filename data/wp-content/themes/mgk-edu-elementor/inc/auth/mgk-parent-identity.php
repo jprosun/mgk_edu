@@ -46,6 +46,9 @@ function mgk_is_parent_user( $user = null ) {
 /** Parents have no business in wp-admin — bounce them to their dashboard. */
 add_action( 'admin_init', function () {
 	if ( ! is_user_logged_in() || ( defined( 'DOING_AJAX' ) && DOING_AJAX ) ) return;
+	// admin-post.php / admin-ajax.php fire admin_init BEFORE their action handlers;
+	// never bounce there or we'd kill a logged-in parent's own form submits (e.g. review).
+	if ( ! empty( $GLOBALS['pagenow'] ) && in_array( $GLOBALS['pagenow'], [ 'admin-post.php', 'admin-ajax.php' ], true ) ) return;
 	if ( mgk_is_parent_user() ) {
 		wp_safe_redirect( mgk_cta_url( 'dashboard' ) );
 		exit;

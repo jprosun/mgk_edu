@@ -32,6 +32,10 @@ add_action( 'template_redirect', function () {
 	$ok = isset( $_GET['_wpnonce'] ) && wp_verify_nonce( sanitize_text_field( wp_unslash( $_GET['_wpnonce'] ) ), 'mgk_logout' );
 	$r  = isset( $_GET['r'] ) ? esc_url_raw( urldecode( wp_unslash( $_GET['r'] ) ) ) : '';
 	if ( ! $ok ) { wp_safe_redirect( mgk_url( '/login/' ) ); exit; }
+	if ( function_exists( 'mgk_auth_current_user_is_staff' ) && mgk_auth_current_user_is_staff() ) {
+		wp_safe_redirect( add_query_arg( 'mgk_auth', 'staff_logout_guard', mgk_url( '/login/' ) ) );
+		exit;
+	}
 	wp_logout();
 	wp_safe_redirect( $r ?: mgk_url( '/login/?signed_out=1' ) );
 	exit;
@@ -90,12 +94,35 @@ function mgk_auth_styles() {
 	</style>';
 }
 
-/** Dev-only: the most recent generated link (so it is testable without SMTP). */
-function mgk_auth_dev_link() {
+/**
+ * Dev-only: show the newest still-valid magic link for this login surface.
+ * Consumed/expired links stay in the debug log for audit, but must not be shown
+ * as clickable sign-in links or users get bounced back to login forever.
+ */
+function mgk_auth_dev_link( $role = 'parent' ) {
 	if ( ! ( defined( 'WP_DEBUG' ) && WP_DEBUG ) ) return '';
 	$log = get_option( 'mgk_login_link_log', [] );
-	if ( empty( $log ) || empty( $log[0]['url'] ) ) return '';
-	return '<div class="mgk-auth__dev"><strong>DEV (WP_DEBUG):</strong> mail isn’t configured locally, so here’s the link:<br><a href="' . esc_url( $log[0]['url'] ) . '">' . esc_html( $log[0]['url'] ) . '</a></div>';
+	if ( empty( $log ) || ! is_array( $log ) ) return '';
+
+	foreach ( $log as $entry ) {
+		$url = (string) ( $entry['url'] ?? '' );
+		if ( $url === '' ) continue;
+		$parts = wp_parse_url( $url );
+		if ( empty( $parts['query'] ) ) continue;
+		parse_str( $parts['query'], $query );
+		if ( empty( $query['mgk_ml'] ) ) continue;
+
+		$is_tutor = ( $query['mgk_role'] ?? '' ) === 'tutor';
+		if ( $role === 'tutor' && ! $is_tutor ) continue;
+		if ( $role !== 'tutor' && $is_tutor ) continue;
+
+		$key = 'mgk_ml_' . mgk_auth_hash( sanitize_text_field( (string) $query['mgk_ml'] ) );
+		if ( ! is_array( get_transient( $key ) ) ) continue;
+
+		return '<div class="mgk-auth__dev"><strong>DEV (WP_DEBUG):</strong> mail isn’t configured locally, so here’s the active link:<br><a href="' . esc_url( $url ) . '">' . esc_html( $url ) . '</a></div>';
+	}
+
+	return '<div class="mgk-auth__dev"><strong>DEV (WP_DEBUG):</strong> no active magic link is available. Request a fresh sign-in link.</div>';
 }
 
 /* ── [mgk_login] ─────────────────────────────────────────────────────────── */
@@ -105,6 +132,7 @@ add_shortcode( 'mgk_login', function () {
 	$sent  = ! empty( $_GET['sent'] );
 	$out   = ! empty( $_GET['signed_out'] );
 	$mask  = isset( $_GET['e'] ) ? sanitize_text_field( wp_unslash( $_GET['e'] ) ) : '';
+	$guard_return = isset( $_GET['mgk_return'] ) ? esc_url_raw( urldecode( wp_unslash( $_GET['mgk_return'] ) ) ) : '';
 
 	ob_start();
 	echo mgk_auth_styles(); // phpcs:ignore
@@ -127,7 +155,7 @@ add_shortcode( 'mgk_login', function () {
 		echo '<h1>Check your inbox</h1>';
 		echo '<div class="mgk-auth__notice mgk-auth__notice--ok">If <strong>' . esc_html( $mask ?: 'your email' ) . '</strong> has an account, we’ve sent a one-time sign-in link. It works once and expires in 15 minutes.</div>';
 		echo '<p>Didn’t get it? Check spam, or <a href="' . esc_url( mgk_url( '/login/' ) ) . '">try again</a>.</p>';
-		echo mgk_auth_dev_link(); // phpcs:ignore
+		echo mgk_auth_dev_link( 'parent' ); // phpcs:ignore
 		echo '</div></div>';
 		return ob_get_clean();
 	}
@@ -139,8 +167,20 @@ add_shortcode( 'mgk_login', function () {
 		echo '<div class="mgk-auth__notice mgk-auth__notice--ok">You’ve been signed out.</div>';
 	} elseif ( $state === 'expired' ) {
 		echo '<div class="mgk-auth__notice mgk-auth__notice--warn">That sign-in link expired or was already used. Enter your email for a fresh one.</div>';
+		echo mgk_auth_dev_link( 'parent' ); // phpcs:ignore
 	} elseif ( $state === 'idle' ) {
 		echo '<div class="mgk-auth__notice mgk-auth__notice--warn">You were signed out after 24 hours of inactivity. Enter your email to sign back in.</div>';
+	} elseif ( $state === 'staff_guard' ) {
+		echo '<div class="mgk-auth__notice mgk-auth__notice--warn">You are signed in as agency staff in this browser. Open the parent sign-in link in another browser/profile so wp-admin stays signed in, or explicitly switch this browser to the parent account.</div>';
+		if ( $guard_return ) {
+			$switch_url = add_query_arg( 'mgk_switch', '1', $guard_return );
+			echo '<a class="mgk-auth__btn" style="text-decoration:none;text-align:center" href="' . esc_url( $switch_url ) . '">Switch this browser to parent →</a>';
+			echo '<p class="mgk-auth__foot">This will replace the current wp-admin session in this browser.</p>';
+			echo '</div></div>';
+			return ob_get_clean();
+		}
+	} elseif ( $state === 'staff_logout_guard' ) {
+		echo '<div class="mgk-auth__notice mgk-auth__notice--warn">You are signed in as agency staff, so this front-end logout link did not sign you out of wp-admin.</div>';
 	}
 	if ( $err === 'email' ) {
 		echo '<div class="mgk-auth__notice mgk-auth__notice--err">Please enter a valid email address.</div>';
