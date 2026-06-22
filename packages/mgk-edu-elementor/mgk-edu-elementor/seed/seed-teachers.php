@@ -27,6 +27,14 @@ foreach ( $levels as $l ) {
 
 echo "Terms created.\n";
 
+if ( ! function_exists( 'mgk_seed_tutor_email' ) ) {
+    function mgk_seed_tutor_email( $name ) {
+        $slug = sanitize_title( (string) $name );
+        $slug = str_replace( '-', '.', $slug );
+        return sanitize_email( $slug . '@tutors.margick.test' );
+    }
+}
+
 // ── Teacher data ─────────────────────────────────────────────────────────────
 
 $teachers = [
@@ -270,6 +278,10 @@ foreach ( $teachers as $t ) {
         'numberposts' => 1,
     ] );
     if ( $existing ) {
+        $existing_id = (int) $existing[0]->ID;
+        if ( ! get_post_meta( $existing_id, 'mgk_tutor_email', true ) ) {
+            update_post_meta( $existing_id, 'mgk_tutor_email', mgk_seed_tutor_email( $t['name'] ) );
+        }
         echo "Skip (exists): {$t['name']}\n";
         continue;
     }
@@ -299,6 +311,7 @@ foreach ( $teachers as $t ) {
     update_post_meta( $post_id, 'mgk_locations',   $t['locations'] );
     update_post_meta( $post_id, 'mgk_tags',        $t['tags'] );
     update_post_meta( $post_id, 'mgk_bio',         $t['bio'] );
+    update_post_meta( $post_id, 'mgk_tutor_email', mgk_seed_tutor_email( $t['name'] ) );
 
     // Subjects taxonomy
     $subject_ids = [];

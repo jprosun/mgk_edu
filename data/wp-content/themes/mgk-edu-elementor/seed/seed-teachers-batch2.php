@@ -15,6 +15,14 @@ foreach ( $extra_levels as $l ) {
 }
 echo "Terms ensured.\n";
 
+if ( ! function_exists( 'mgk_seed_tutor_email' ) ) {
+    function mgk_seed_tutor_email( $name ) {
+        $slug = sanitize_title( (string) $name );
+        $slug = str_replace( '-', '.', $slug );
+        return sanitize_email( $slug . '@tutors.margick.test' );
+    }
+}
+
 // ── Teacher definitions ──────────────────────────────────────────────────────
 $teachers = [
     [
@@ -327,7 +335,14 @@ $teachers = [
 $created = 0;
 foreach ( $teachers as $t ) {
     $existing = get_posts( [ 'post_type' => 'mg_teacher', 'post_status' => 'publish', 'title' => $t['name'], 'numberposts' => 1 ] );
-    if ( $existing ) { echo "Skip (exists): {$t['name']}\n"; continue; }
+    if ( $existing ) {
+        $existing_id = (int) $existing[0]->ID;
+        if ( ! get_post_meta( $existing_id, 'mgk_tutor_email', true ) ) {
+            update_post_meta( $existing_id, 'mgk_tutor_email', mgk_seed_tutor_email( $t['name'] ) );
+        }
+        echo "Skip (exists): {$t['name']}\n";
+        continue;
+    }
 
     $post_id = wp_insert_post( [
         'post_type'    => 'mg_teacher',
@@ -345,6 +360,7 @@ foreach ( $teachers as $t ) {
         if ( isset( $t[ $k ] ) ) update_post_meta( $post_id, $meta_k, $t[ $k ] );
     }
     update_post_meta( $post_id, 'mgk_locations', $t['locations'] );
+    update_post_meta( $post_id, 'mgk_tutor_email', mgk_seed_tutor_email( $t['name'] ) );
 
     // Profile Phase 1 meta
     foreach ( [ 'short_name', 'credential_badge', 'languages', 'duration', 'active_students', 'last_active', 'philosophy' ] as $k ) {
