@@ -186,15 +186,38 @@ function mgk_engine_create_package_order( $args ) {
 }
 
 /* ── Materialise the enrolment on a confirmed package payment ───────────── */
-add_action( 'mgk_booking_confirmed', function ( $booking_id ) {
-	$booking_id = (int) $booking_id;
-	if ( ! function_exists( 'mgk_get_booking_row' ) || ! function_exists( 'mgk_enrolment_create' ) ) return;
-	$row  = mgk_get_booking_row( $booking_id );
-	if ( ! $row ) return;
-	$plan = mgk_package_plan_from_lesson_type( (string) $row['lesson_type'] );
-	if ( ! $plan ) return; // not a package order
+/* MIGRATED to the commerce FULFILLMENT seam (SCHEMA-AND-MIGRATIONS.md): "paid
+ * edu_package_* → grant the enrolment" is textbook fulfillment, so it now triggers
+ * on Dispatcher → mgk_commerce_fulfilled (fired once on the PENDING→PAID core-order
+ * edge) instead of the raw mgk_booking_confirmed event. Safe to move: by seam-time
+ * parent-claim (prio 10) has already set parent_user_id + child; idempotent via the
+ * ENROLMENT_CREATED event guard. Trials (edu_trial) carry no plan → no-op. */
+add_action( 'mgk_commerce_fulfilled', function ( $item_type, $ref_id, $order ) {
+	if ( strncmp( (string) $item_type, 'edu_', 4 ) !== 0 ) return; // edu sellables only
+	$meta       = isset( $order['metadata_json'] ) ? json_decode( (string) $order['metadata_json'], true ) : [];
+	$booking_id = is_array( $meta ) && isset( $meta['booking_id'] ) ? (int) $meta['booking_id'] : 0;
+	if ( $booking_id ) {
+		mgk_fulfill_package_enrolment( $booking_id );
+	}
+}, 10, 3 );
 
-	if ( function_exists( 'mgk_booking_has_event' ) && mgk_booking_has_event( $booking_id, 'ENROLMENT_CREATED' ) ) return;
+/**
+ * Create the ACTIVE enrolment for a confirmed PACKAGE booking. No-op for non-package
+ * bookings (no plan) and idempotent via the ENROLMENT_CREATED booking event, so it's
+ * safe to call more than once for the same booking.
+ *
+ * @param int $booking_id
+ * @return int enrolment id (0 on no-op)
+ */
+function mgk_fulfill_package_enrolment( $booking_id ) {
+	$booking_id = (int) $booking_id;
+	if ( ! function_exists( 'mgk_get_booking_row' ) || ! function_exists( 'mgk_enrolment_create' ) ) return 0;
+	$row = mgk_get_booking_row( $booking_id );
+	if ( ! $row ) return 0;
+	$plan = mgk_package_plan_from_lesson_type( (string) $row['lesson_type'] );
+	if ( ! $plan ) return 0; // not a package order (e.g. a trial)
+
+	if ( function_exists( 'mgk_booking_has_event' ) && mgk_booking_has_event( $booking_id, 'ENROLMENT_CREATED' ) ) return 0;
 
 	$lessons     = mgk_package_plan_lessons( $plan );
 	$valid_until = gmdate( 'Y-m-d', time() + MGK_PACKAGE_VALIDITY_DAYS * DAY_IN_SECONDS );
@@ -214,7 +237,8 @@ add_action( 'mgk_booking_confirmed', function ( $booking_id ) {
 			'metadata' => [ 'enrolment_id' => $enr, 'plan' => $plan, 'lessons' => $lessons ],
 		] );
 	}
-}, 30 );
+	return (int) $enr;
+}
 
 /* ── REST: create a package order (logged-in parent only) ───────────────── */
 add_action( 'rest_api_init', function () {
