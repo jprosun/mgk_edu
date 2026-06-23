@@ -82,16 +82,8 @@ $state_copy = function ( $key ) use ( $states, $hold_mmss ) {
     <!-- Card (Stripe) fallback panel — FR-PAY-05 -->
     <div class="mgk-pay-panel mgk-pay-panel--card<?php echo $active_method === 'card' && ! $active_state ? ' is-active' : ''; ?>"
          data-pay-panel="card" role="tabpanel">
-        <span class="mgk-bk-sectag mgk-bk-sectag--inline">CARD FALLBACK (Stripe · FR-PAY-05)</span>
-        <label class="mgk-pay-field mgk-pay-field--card">
-            <span class="mgk-pay-field-icon" aria-hidden="true">💳</span>
-            <input type="text" class="mgk-pay-input" inputmode="numeric" autocomplete="cc-number"
-                   placeholder="Card number ···· ···· ···· 4242" data-pay-card-number />
-        </label>
-        <div class="mgk-pay-card-row">
-            <input type="text" class="mgk-pay-input" placeholder="MM/YY" autocomplete="cc-exp" inputmode="numeric" data-pay-card-exp />
-            <input type="text" class="mgk-pay-input" placeholder="CVC" autocomplete="cc-csc" inputmode="numeric" data-pay-card-cvc />
-        </div>
+        <span class="mgk-bk-sectag mgk-bk-sectag--inline">CARD (Stripe · FR-PAY-05)</span>
+        <p class="mgk-pay-card-redirect">🔒 You'll enter your card details securely on the next step (Stripe Checkout). No card data is stored on this site — you only enter it once.</p>
         <p class="mgk-pay-card-note"><?php echo esc_html( $card_note ); ?></p>
     </div>
 

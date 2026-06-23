@@ -12,7 +12,9 @@
  *   mgk_v_type         ('pct' | 'fixed')
  *   mgk_v_value        (number) — percent (0-100) or fixed SGD amount
  *   mgk_v_is_stackable (0|1)    — may combine with auto loyalty discounts
+ *   mgk_v_respect_global_cap (0|1) — share the automatic-discount cap
  *   mgk_v_min_spend    (number) — minimum order subtotal to qualify
+ *   mgk_v_max_discount (number) — optional monetary cap for this voucher
  *   mgk_v_max_uses     (int)    — 0 = unlimited
  *   mgk_v_used_count   (int)    — incremented on successful payment
  *   mgk_v_valid_from   (Y-m-d)  — optional
@@ -164,6 +166,7 @@ function mgk_voucher_validate( $code, $args = [] ) {
 				: $v->percentageBps / 100,
 			'amount'       => $decision->discount->toMajor(),
 			'is_stackable' => $v->stackable,
+			'respect_global_cap' => $v->respectGlobalCap,
 			'voucher_id'   => $v->id,
 			'message'      => '',
 		];
@@ -205,6 +208,7 @@ function mgk_voucher_validate( $code, $args = [] ) {
 		'type'         => $type,
 		'value'        => $value,
 		'is_stackable' => (int) $m( 'mgk_v_is_stackable', 0 ) === 1,
+		'respect_global_cap' => (int) $m( 'mgk_v_respect_global_cap', 0 ) === 1,
 		'post_id'      => $pid,
 		'message'      => '',
 	];
@@ -247,7 +251,11 @@ function mgk_voucher_sync_post_to_module( $post_id ) {
 		'fixed_amount_minor'       => $type === 'fixed' ? \Margick\Commerce\Domain\Money::ofMajor( $value, $currency )->minor() : 0,
 		'currency'                 => $currency,
 		'min_order_minor'          => \Margick\Commerce\Domain\Money::ofMajor( (float) $g( 'mgk_v_min_spend', 0 ), $currency )->minor(),
+		'max_discount_minor'       => (float) $g( 'mgk_v_max_discount', 0 ) > 0
+			? \Margick\Commerce\Domain\Money::ofMajor( (float) $g( 'mgk_v_max_discount', 0 ), $currency )->minor()
+			: null,
 		'stackable'                => (int) $g( 'mgk_v_is_stackable', 0 ) === 1,
+		'respect_global_cap'       => (int) $g( 'mgk_v_respect_global_cap', 0 ) === 1,
 		'usage_limit'              => (int) $g( 'mgk_v_max_uses', 0 ) ?: null,
 		'usage_limit_per_customer' => (int) $g( 'mgk_v_max_uses_per_customer', 0 ) ?: null,
 		'customer_key'             => (string) $g( 'mgk_v_customer_key' ) ?: null,
@@ -474,6 +482,11 @@ function mgk_voucher_metabox( $post ) {
 			<p class="hint">0 = unlimited. Consumed: <strong><?php echo (int) $usage['consumed']; ?></strong>; currently reserved: <strong><?php echo (int) $usage['reserved']; ?></strong>.</p>
 		</div>
 		<div>
+			<label for="mgk_v_max_discount">Maximum voucher discount ($)</label>
+			<input type="number" id="mgk_v_max_discount" name="mgk_v_max_discount" value="<?php echo esc_attr( $g( 'mgk_v_max_discount', 0 ) ); ?>" step="0.01" min="0">
+			<p class="hint">0 = no monetary cap. Useful for percentage vouchers.</p>
+		</div>
+		<div>
 			<label for="mgk_v_max_uses_per_customer">Max uses per customer</label>
 			<input type="number" id="mgk_v_max_uses_per_customer" name="mgk_v_max_uses_per_customer" value="<?php echo esc_attr( $g( 'mgk_v_max_uses_per_customer', 0 ) ); ?>" step="1" min="0">
 			<p class="hint">0 = unlimited. Customer identity uses account email.</p>
@@ -508,7 +521,14 @@ function mgk_voucher_metabox( $post ) {
 			<input type="checkbox" id="mgk_v_is_stackable" name="mgk_v_is_stackable" value="1" <?php checked( (int) $g( 'mgk_v_is_stackable', 0 ), 1 ); ?>>
 			<label for="mgk_v_is_stackable" style="font-weight:600;margin:0">
 				Allow stacking with automatic discounts (sibling / returning)
-				<span class="hint" style="display:block;font-weight:400">Off (default) = this voucher is the only discount applied when used. Total still capped at <?php echo (int) mgk_discount_rule( 'stack_cap_pct', 25 ); ?>%.</span>
+				<span class="hint" style="display:block;font-weight:400">Off (default) = use whichever saves the customer more: this voucher or automatic discounts.</span>
+			</label>
+		</div>
+		<div class="full mgk-vchk">
+			<input type="checkbox" id="mgk_v_respect_global_cap" name="mgk_v_respect_global_cap" value="1" <?php checked( (int) $g( 'mgk_v_respect_global_cap', 0 ), 1 ); ?>>
+			<label for="mgk_v_respect_global_cap" style="font-weight:600;margin:0">
+				Limit this voucher with the global <?php echo (int) mgk_discount_rule( 'stack_cap_pct', 25 ); ?>% extra-discount cap
+				<span class="hint" style="display:block;font-weight:400">Off (default) lets the voucher deliver its configured value. Enable only when this campaign must share the automatic-discount budget.</span>
 			</label>
 		</div>
 		<div class="full mgk-vchk">
@@ -536,9 +556,10 @@ add_action( 'save_post_mgk_voucher', function ( $post_id ) {
 	update_post_meta( $post_id, 'mgk_v_type', ( ( $_POST['mgk_v_type'] ?? 'pct' ) === 'fixed' ) ? 'fixed' : 'pct' );
 	update_post_meta( $post_id, 'mgk_v_value', (float) ( $_POST['mgk_v_value'] ?? 0 ) );
 	update_post_meta( $post_id, 'mgk_v_min_spend', (float) ( $_POST['mgk_v_min_spend'] ?? 0 ) );
+	update_post_meta( $post_id, 'mgk_v_max_discount', (float) ( $_POST['mgk_v_max_discount'] ?? 0 ) );
 	update_post_meta( $post_id, 'mgk_v_max_uses', (int) ( $_POST['mgk_v_max_uses'] ?? 0 ) );
 	update_post_meta( $post_id, 'mgk_v_max_uses_per_customer', (int) ( $_POST['mgk_v_max_uses_per_customer'] ?? 0 ) );
-	foreach ( [ 'mgk_v_is_stackable', 'mgk_v_exclude_sale', 'mgk_v_active', 'mgk_v_first_order_only' ] as $cb ) {
+	foreach ( [ 'mgk_v_is_stackable', 'mgk_v_respect_global_cap', 'mgk_v_exclude_sale', 'mgk_v_active', 'mgk_v_first_order_only' ] as $cb ) {
 		update_post_meta( $post_id, $cb, isset( $_POST[ $cb ] ) ? 1 : 0 );
 	}
 	if ( get_post_meta( $post_id, 'mgk_v_used_count', true ) === '' ) {

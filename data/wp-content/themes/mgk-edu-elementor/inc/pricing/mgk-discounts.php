@@ -14,11 +14,10 @@
  *   2. VOUCHERS — the `mgk_voucher` CPT (see mgk-voucher-cpt.php): one code per
  *      order, min-spend, stackable flag, etc.
  *
- * Stacking (BR-05/06): automatic loyalty discounts (sibling/returning) + a
- * voucher may stack, but the TOTAL discount is capped at the configured cap
- * (default 25%) of the discountable base. The headline trial/package discount
- * is the price floor it stacks ON TOP of, and is NOT itself capped (it is the
- * advertised price). GST (BR-04) is inclusive.
+ * Stacking (BR-05/06): automatic loyalty discounts (sibling/returning) share
+ * the configured cap (default 25%) of the advertised price. A voucher only
+ * shares that cap when its campaign explicitly opts in; its own maximum amount
+ * is configured on the voucher. GST (BR-04) is inclusive.
  *
  * @package mgk-edu-elementor
  */
@@ -195,9 +194,9 @@ function mgk_quote_base( $args ) {
 }
 
 /**
- * Full quote: headline discount → eligible loyalty discounts → optional voucher,
- * all stacked under the cap, then GST note. Returns BOTH machine numbers (for the
- * charge) and display rows (for the UI). This is THE function the whole funnel uses.
+ * Full quote: headline discount → eligible automatic discounts + optional
+ * voucher under their respective cap policies → GST. Returns BOTH machine
+ * numbers (for charge) and display rows. This is THE funnel pricing function.
  *
  * @param array $args item_type, rate_num|base_amount, units, context{parent_user_id,
  *              parent_email,child_id}, voucher_code, apply_loyalty(bool, default true)
@@ -239,7 +238,7 @@ function mgk_quote( $args = [] ) {
 
 	// ── Voucher (edu/WP CPT) ──
 	$code = strtoupper( trim( (string) ( $args['voucher_code'] ?? '' ) ) );
-	$voucher = null; $voucher_stackable = false; $voucher_note = '';
+	$voucher = null; $voucher_stackable = false; $voucher_capped = false; $voucher_note = '';
 	if ( $code !== '' && function_exists( 'mgk_voucher_validate' ) ) {
 		$v = mgk_voucher_validate( $code, [ 'subtotal' => $advertised, 'base' => $advertised, 'currency' => $currency, 'item_type' => $item_type, 'context' => $ctx ] );
 		if ( ! empty( $v['valid'] ) ) {
@@ -249,6 +248,7 @@ function mgk_quote( $args = [] ) {
 				: ( $v['type'] === 'fixed' ? (float) $v['value'] : $advertised * ( (float) $v['value'] / 100 ) );
 			$voucher = new DiscountLine( 'voucher:' . $code, 'Voucher ' . $code, $vpct, Money::ofMajor( $vamt, $currency ) );
 			$voucher_stackable = ! empty( $v['is_stackable'] );
+			$voucher_capped = ! empty( $v['respect_global_cap'] );
 		} else {
 			$voucher_note = (string) ( $v['message'] ?? 'Voucher not applicable' );
 		}
@@ -261,6 +261,7 @@ function mgk_quote( $args = [] ) {
 		loyalty:          $loyalty,
 		voucher:          $voucher,
 		voucherStackable: $voucher_stackable,
+		voucherCapped:    $voucher_capped,
 		capPct:           $cap_pct,
 		gstPct:           $gst_pct,
 		gstInclusive:     $gst_incl,

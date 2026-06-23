@@ -173,7 +173,10 @@ add_action( 'admin_post_mgk_stripe_connect_disconnect', function () {
  * Create a Stripe Checkout Session for a HELD booking. Moves the booking to
  * PENDING_PAYMENT and records a PENDING payment row.
  *
- * @return array|WP_Error  ['checkout_url'=>..., 'payment_id'=>..., 'mode'=>live|mock]
+ * A zero-total order is confirmed locally because Stripe does not accept a
+ * Checkout line item with a zero unit amount.
+ *
+ * @return array|WP_Error  ['checkout_url'=>..., 'payment_id'=>..., 'mode'=>live|mock|free]
  */
 function mgk_stripe_create_checkout( $booking_id, $return_url = '' ) {
 	global $wpdb;
@@ -207,6 +210,59 @@ function mgk_stripe_create_checkout( $booking_id, $return_url = '' ) {
 
 	$payments = mgk_booking_table( 'payments' );
 	$now = mgk_booking_now_utc();
+
+	if ( $amount_minor <= 0 ) {
+		$session_id = 'free_' . $booking_id . '_' . substr( hash( 'sha256', (string) $row['booking_code'] ), 0, 16 );
+		$event_id   = 'evt_' . $session_id;
+		$existing = $wpdb->get_row( $wpdb->prepare(
+			"SELECT id FROM {$payments} WHERE provider_checkout_session_id = %s LIMIT 1",
+			$session_id
+		), ARRAY_A );
+
+		if ( $existing ) {
+			$payment_id = (int) $existing['id'];
+		} else {
+			$wpdb->insert( $payments, [
+				'booking_id'                   => $booking_id,
+				'provider'                     => 'VOUCHER',
+				'provider_checkout_session_id' => $session_id,
+				'latest_webhook_event_id'      => $event_id,
+				'amount'                       => 0,
+				'currency'                     => strtoupper( $currency ),
+				'status'                       => 'PENDING',
+				'created_at_utc'               => $now,
+				'updated_at_utc'               => $now,
+			] );
+			if ( ! $wpdb->insert_id ) {
+				return new WP_Error( 'mgk_free_payment_failed', 'Could not record the free order.', [ 'status' => 500 ] );
+			}
+			$payment_id = (int) $wpdb->insert_id;
+			$wpdb->update( mgk_booking_table( 'bookings' ),
+				[ 'status' => 'PENDING_PAYMENT', 'updated_at_utc' => $now ],
+				[ 'id' => $booking_id ]
+			);
+			mgk_log_booking_event( $booking_id, 'PAYMENT_CREATED', [
+				'old_status' => $row['status'], 'new_status' => 'PENDING_PAYMENT', 'provider' => 'VOUCHER',
+				'actor_type' => 'SYSTEM',
+				'metadata' => [ 'session_id' => $session_id, 'mode' => 'free', 'amount' => 0 ],
+			] );
+		}
+
+		$confirmed = mgk_stripe_confirm_paid( $booking_id, [
+			'id' => $session_id, 'amount_total' => 0, '_provider' => 'VOUCHER',
+		], $event_id );
+		$confirmed_row = mgk_get_booking_row( $booking_id );
+		if ( empty( $confirmed['ok'] ) || ! $confirmed_row || $confirmed_row['status'] !== 'CONFIRMED' ) {
+			return new WP_Error( 'mgk_free_confirmation_failed', 'Could not confirm the free order.', [ 'status' => 500 ] );
+		}
+		return [
+			'checkout_url' => $return_url,
+			'payment_id'   => $payment_id,
+			'session_id'   => $session_id,
+			'mode'         => 'free',
+			'confirmed'    => true,
+		];
+	}
 
 	if ( mgk_stripe_is_live() ) {
 		$stripe_account = mgk_stripe_connected_account_id();
@@ -373,6 +429,8 @@ function mgk_stripe_confirm_paid( $booking_id, $object = [], $event_id = '' ) {
 	$now      = mgk_booking_now_utc();
 	$payments = mgk_booking_table( 'payments' );
 	$bookings = mgk_booking_table( 'bookings' );
+	$provider = strtoupper( sanitize_text_field( (string) ( $object['_provider'] ?? 'STRIPE' ) ) );
+	$actor_type = $provider === 'STRIPE' ? 'WEBHOOK' : 'SYSTEM';
 
 	// Amount sanity (when the event carries an amount).
 	$paid_minor = isset( $object['amount_total'] ) ? (int) $object['amount_total']
@@ -415,8 +473,8 @@ function mgk_stripe_confirm_paid( $booking_id, $object = [], $event_id = '' ) {
 		);
 		$wpdb->query( 'COMMIT' );
 		mgk_log_booking_event( $booking_id, 'MANUAL_REVIEW_CREATED', [
-			'old_status' => $row['status'], 'new_status' => 'MANUAL_REVIEW', 'provider' => 'STRIPE',
-			'actor_type' => 'WEBHOOK', 'metadata' => [ 'reason' => $reason, 'paid_minor' => $paid_minor, 'expected_minor' => $expected_minor ],
+			'old_status' => $row['status'], 'new_status' => 'MANUAL_REVIEW', 'provider' => $provider,
+			'actor_type' => $actor_type, 'metadata' => [ 'reason' => $reason, 'paid_minor' => $paid_minor, 'expected_minor' => $expected_minor ],
 		] );
 		return [ 'ok' => true, 'message' => 'manual review: ' . $reason ];
 	}
@@ -430,8 +488,8 @@ function mgk_stripe_confirm_paid( $booking_id, $object = [], $event_id = '' ) {
 
 	$wpdb->query( 'COMMIT' );
 
-	mgk_log_booking_event( $booking_id, 'PAYMENT_SUCCEEDED', [ 'provider' => 'STRIPE', 'actor_type' => 'WEBHOOK', 'new_status' => 'PAID' ] );
-	mgk_log_booking_event( $booking_id, 'BOOKING_CONFIRMED', [ 'old_status' => $row['status'], 'new_status' => 'CONFIRMED', 'actor_type' => 'WEBHOOK' ] );
+	mgk_log_booking_event( $booking_id, 'PAYMENT_SUCCEEDED', [ 'provider' => $provider, 'actor_type' => $actor_type, 'new_status' => 'PAID' ] );
+	mgk_log_booking_event( $booking_id, 'BOOKING_CONFIRMED', [ 'old_status' => $row['status'], 'new_status' => 'CONFIRMED', 'provider' => $provider, 'actor_type' => $actor_type ] );
 
 	do_action( 'mgk_booking_confirmed', $booking_id );
 

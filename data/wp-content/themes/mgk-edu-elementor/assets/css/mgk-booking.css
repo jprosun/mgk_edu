@@ -1118,6 +1118,17 @@ button.mgk-bk-day { cursor: pointer; }
 .mgk-pay-panel { display: none; border: 1px solid var(--bk-line); padding: 18px; }
 .mgk-pay-panel.is-active { display: block; }
 
+/* PayNow-not-ready notice (shown when the user tries to pay via PayNow). */
+.mgk-pay-paynow-notice {
+    display: none; margin: 10px 0 0; padding: 10px 12px;
+    font-size: 13px; font-weight: 700; line-height: 1.4;
+    color: #8a4b00; background: #FFF4E5; border: 1px solid #F0C68A; border-radius: 6px;
+}
+/* Card panel: card entry happens on Stripe's hosted page, not here. */
+.mgk-pay-card-redirect {
+    margin: 0 0 12px; font-size: 13px; line-height: 1.5; color: #555;
+}
+
 .mgk-pay-panel--paynow { text-align: center; }
 .mgk-pay-panel-head { font-size: 14px; font-weight: 800; margin: 0 0 14px; }
 .mgk-pay-qr {

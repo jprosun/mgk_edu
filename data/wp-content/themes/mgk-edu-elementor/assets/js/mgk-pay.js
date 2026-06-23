@@ -61,6 +61,7 @@
         btns.forEach(function (b) {
             b.addEventListener('click', function () {
                 var m = b.getAttribute('data-pay-method');
+                hidePaynowNotice(scope); // user re-chose a method → clear the notice
                 activate(m);
                 track('pay_method_select', { method: m });
             });
@@ -101,6 +102,31 @@
             });
         }
         sync();
+    }
+
+    /* ── PayNow-not-ready notice (PayNow isn't wired in this build) ───────── */
+    function paynowNotice(scope) {
+        var methods = scope.querySelector('.mgk-pay-methods');
+        if (!methods) { return null; }
+        var n = scope.querySelector('[data-pay-paynow-notice]');
+        if (!n) {
+            n = document.createElement('p');
+            n.setAttribute('data-pay-paynow-notice', '');
+            n.className = 'mgk-pay-paynow-notice';
+            n.setAttribute('role', 'status');
+            methods.parentNode.insertBefore(n, methods.nextSibling);
+        }
+        return n;
+    }
+    function showPaynowNotice(scope) {
+        var n = paynowNotice(scope);
+        if (!n) { return; }
+        n.textContent = '⚠️ PayNow isn’t available yet — we’ve switched you to Card payment.';
+        n.style.display = 'block';
+    }
+    function hidePaynowNotice(scope) {
+        var n = scope.querySelector('[data-pay-paynow-notice]');
+        if (n) { n.style.display = 'none'; }
     }
 
     /* ── Status panels (post-submit state machine) ────────── */
@@ -177,6 +203,16 @@
         cta.addEventListener('click', function (e) {
             if (cta.classList.contains('is-disabled')) { e.preventDefault(); return; }
             e.preventDefault();
+
+            // PayNow isn't wired in this build → don't drop the user into Stripe's
+            // card form. Switch them to Card and explain why.
+            if (methodCtl.current() === 'paynow') {
+                methodCtl.activate('card');
+                showPaynowNotice(scope);
+                track('pay_paynow_unavailable', {});
+                return;
+            }
+
             track('pay_submit', { method: methodCtl.current(), amount: cta.getAttribute('data-amount') });
 
             var bookingId = parseInt(cta.getAttribute('data-booking-id') || '0', 10);

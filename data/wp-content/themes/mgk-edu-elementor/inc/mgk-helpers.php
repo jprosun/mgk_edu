@@ -1136,20 +1136,30 @@ function mgk_profile_tutor( $slug = '' ) {
 
         $pkg_rows     = $f( 'mgk_packages' ) ?: [];
         $packages     = array_map( fn( $r ) => [ $r['name'] ?? '', $r['price'] ?? '', $r['description'] ?? '', ! empty( $r['featured'] ) ], $pkg_rows );
-        // Prices come from the unified discount engine so the profile always shows
-        // the SAME figures the agency configures in wp-admin → Discounts (and what
-        // a package/trial actually charges). Empty ACF → full engine 3-tier set;
-        // otherwise recompute the price of any standard tier (trial / 8 / 16), keeping
-        // the admin's custom name + description for non-standard rows.
+        // Prices AND the discount badge come from the unified discount engine so the
+        // profile always shows the SAME figures the agency configures in wp-admin →
+        // Discounts (and what a package/trial actually charges). Empty ACF → full engine
+        // 3-tier set; otherwise recompute BOTH price + "% off / % saving" of any standard
+        // tier (trial / 8 / 16) from the live rules, keeping the admin's custom name.
+        // Non-standard rows keep the admin's price + description untouched.
         if ( function_exists( 'mgk_engine_packages_for_rate' ) ) {
             if ( empty( $packages ) ) {
                 $packages = mgk_engine_packages_for_rate( $rate_num );
             } else {
+                $rules = function_exists( 'mgk_discount_rules' ) ? mgk_discount_rules() : [];
+                $tier_badge = [
+                    'trial'      => sprintf( 'First lesson %d%% off', (int) ( $rules['trial_pct'] ?? 0 ) ),
+                    'package_8'  => sprintf( '%d%% package saving', (int) ( $rules['package_8_pct'] ?? 0 ) ),
+                    'package_16' => sprintf( '%d%% package saving', (int) ( $rules['package_16_pct'] ?? 0 ) ),
+                ];
                 foreach ( $packages as $i => $pk ) {
                     $tier = mgk_engine_detect_tier( $pk[0] );
                     if ( $tier ) {
                         $q = mgk_quote( [ 'item_type' => $tier, 'rate_num' => $rate_num, 'apply_loyalty' => false ] );
                         $packages[ $i ][1] = $q['total_str'];
+                        if ( isset( $tier_badge[ $tier ] ) ) {
+                            $packages[ $i ][2] = $tier_badge[ $tier ];
+                        }
                     }
                 }
             }
