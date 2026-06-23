@@ -48,9 +48,14 @@ function mgk_sync_core_order_for_booking( $booking_id, $status, $create_if_missi
 
 	// Already mirrored → just advance status (+ attach the payer if claimed late).
 	if ( $oid ) {
+		$prev = (string) ( OrderRepository::getOrder( $oid )['status'] ?? '' );
 		OrderRepository::updateStatus( $oid, (string) $status );
 		if ( ! empty( $row['parent_user_id'] ) ) {
 			OrderRepository::assignCustomer( $oid, (int) $row['parent_user_id'] );
+		}
+		// Fulfill once, on the PENDING→PAID edge only (idempotent vs webhook retries).
+		if ( $status === 'PAID' && $prev !== 'PAID' ) {
+			mgk_edu_dispatch_fulfillment( $oid );
 		}
 		return $oid;
 	}
@@ -102,5 +107,33 @@ function mgk_sync_core_order_for_booking( $booking_id, $status, $create_if_missi
 	OrderRepository::recalcTotals( $oid );
 
 	do_action( 'mgk_core_order_written', $oid, (int) $row['id'] );
+
+	// Created straight at PAID (e.g. confirm without a prior hold-order) → fulfill.
+	if ( $status === 'PAID' ) {
+		mgk_edu_dispatch_fulfillment( $oid );
+	}
 	return $oid;
+}
+
+/**
+ * Run the commerce fulfillment seam for every line of a core order. Guarded so a
+ * missing module or a throwing handler can NEVER break the booking confirm path.
+ *
+ * @param int $oid core order id
+ */
+function mgk_edu_dispatch_fulfillment( $oid ) {
+	if ( ! class_exists( '\\Margick\\Commerce\\Dispatcher' ) ) return;
+	$order = OrderRepository::getOrderWithItems( (int) $oid );
+	if ( ! $order || empty( $order['items'] ) ) return;
+	foreach ( $order['items'] as $it ) {
+		try {
+			\Margick\Commerce\Dispatcher::fulfill(
+				(string) $it['item_type'],
+				(int) ( $it['item_ref_id'] ?? 0 ),
+				$order
+			);
+		} catch ( \Throwable $e ) {
+			error_log( '[mgk-commerce] fulfill failed for order ' . (int) $oid . ': ' . $e->getMessage() );
+		}
+	}
 }

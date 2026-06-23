@@ -110,6 +110,7 @@ require_once __DIR__ . '/inc/booking/booking-manage.php';
 require_once __DIR__ . '/inc/pricing/mgk-packages.php';
 require_once __DIR__ . '/inc/booking/booking-mirror.php';
 require_once __DIR__ . '/inc/booking/booking-core-order.php';
+require_once __DIR__ . '/inc/booking/edu-commerce-adapter.php';
 require_once __DIR__ . '/inc/booking/booking-admin.php';
 require_once __DIR__ . '/inc/booking/booking-admin-bookings.php';
 require_once __DIR__ . '/inc/mgk-request-fields.php';
