@@ -96,6 +96,7 @@ function mgk_get_parent_dashboard_context() {
         'package'          => mgk_get_active_package_summary( $child_id ),
         'invoices_url'     => mgk_get_invoices_url( $parent_id ),
         'billing'          => mgk_get_parent_billing( $parent_id ),
+        'orders'           => mgk_get_parent_orders( $parent_id ),
         'message_thread'   => mgk_get_primary_tutor_thread( $child_id ),
         'buy_package_url'  => mgk_get_buy_package_url( $child_id ),
         'quick_links'      => mgk_get_parent_dashboard_quick_links(),
@@ -521,6 +522,42 @@ function mgk_get_parent_billing( $parent_id ) {
         'last_method'=> $method,
         'last_date'  => $row['paid_at_utc'] ? gmdate( 'j M Y', strtotime( $row['paid_at_utc'] ) ) : '',
     ];
+}
+
+/**
+ * Parent's recent PAID orders, read from the commerce CORE via OrderRepository
+ * (SCHEMA-AND-MIGRATIONS.md LAW 3 — never raw $wpdb into the core tables). This
+ * is edu CONSUMING the shared module: the dual-write (booking-core-order.php)
+ * populates mgk_core_orders, and the dashboard reads it back through the repo.
+ *
+ * @param int $parent_id wp_user id (= orders.customer_user_id)
+ * @return array<int,array{code:string,date:string,total:string,label:string}>
+ */
+function mgk_get_parent_orders( $parent_id, $limit = 5 ) {
+    $parent_id = (int) $parent_id;
+    $repo = '\\Margick\\Commerce\\Wp\\OrderRepository';
+    if ( ! $parent_id || ! class_exists( $repo ) ) {
+        return [];
+    }
+    $out = [];
+    foreach ( $repo::forCustomer( $parent_id, 30 ) as $o ) {
+        if ( strtoupper( (string) ( $o['status'] ?? '' ) ) !== 'PAID' ) {
+            continue;
+        }
+        $items = $repo::getItems( (int) $o['id'] );
+        $cur   = (string) ( $o['currency'] ?? 'SGD' );
+        $sym   = ( $cur === 'SGD' || $cur === 'USD' ) ? '$' : '';
+        $out[] = [
+            'code'  => (string) ( $o['order_code'] ?? '' ),
+            'date'  => ! empty( $o['updated_at_utc'] ) ? gmdate( 'j M Y', strtotime( (string) $o['updated_at_utc'] ) ) : '',
+            'total' => $sym . number_format( (float) ( $o['total_amount'] ?? 0 ), 2 ) . ( $sym ? '' : ' ' . $cur ),
+            'label' => $items ? (string) $items[0]['name'] : (string) ( $o['order_code'] ?? '' ),
+        ];
+        if ( count( $out ) >= (int) $limit ) {
+            break;
+        }
+    }
+    return $out;
 }
 
 function mgk_get_primary_tutor_thread( $child_id ) {

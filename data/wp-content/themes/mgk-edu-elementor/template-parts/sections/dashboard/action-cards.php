@@ -17,6 +17,16 @@ $billing = $ctx['billing'] ?? [];
             <?php if ( ! empty( $billing['has'] ) ) : ?>
                 <p style="font-size:13px;color:#646970;margin:4px 0 0;">Last paid: <strong><?php echo esc_html( $billing['last_amount'] ); ?></strong> · <?php echo esc_html( $billing['last_method'] . ' · ' . $billing['last_date'] ); ?></p>
             <?php endif; ?>
+            <?php $orders = $ctx['orders'] ?? []; if ( $orders ) : ?>
+                <ul class="mgk-parent-dashboard-receipts" style="list-style:none;margin:8px 0 0;padding:8px 0 0;border-top:1px solid #f0f0f1;">
+                    <?php foreach ( $orders as $o ) : ?>
+                        <li style="display:flex;justify-content:space-between;gap:10px;font-size:12px;color:#646970;padding:3px 0;">
+                            <span title="<?php echo esc_attr( $o['date'] ); ?>" style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap;"><?php echo esc_html( $o['label'] ); ?></span>
+                            <strong style="white-space:nowrap;color:#1d2327;"><?php echo esc_html( $o['total'] ); ?></strong>
+                        </li>
+                    <?php endforeach; ?>
+                </ul>
+            <?php endif; ?>
             <a class="mgk-parent-dashboard-btn mgk-parent-dashboard-btn--outline mgk-parent-dashboard-btn--full" href="<?php echo esc_url( $ctx['invoices_url'] ?? '#' ); ?>" data-event="billing_view_invoices_click"><?php echo esc_html( $atts['invoice_label'] ?? 'View invoices / receipts' ); ?></a>
         </article>
         <article class="mgk-parent-dashboard-action-card">
