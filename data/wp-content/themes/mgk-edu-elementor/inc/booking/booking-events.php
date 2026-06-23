@@ -104,8 +104,13 @@ function mgk_mark_webhook_processed( $provider, $event_id, $event_type = '', $bo
 
 /* ── Shared row accessors (used across the engine) ─────────────────────── */
 
-/** Fetch a booking row as an associative array, or null. */
+/** Fetch a booking row as an associative array, or null.
+ * Delegates to the module's BookingRepository (LAW 3 sanctioned door); the local
+ * $wpdb path is a fallback if the commerce module is somehow absent. */
 function mgk_get_booking_row( $booking_id ) {
+	if ( class_exists( '\\Margick\\Commerce\\Wp\\BookingRepository' ) ) {
+		return \Margick\Commerce\Wp\BookingRepository::getRow( (int) $booking_id );
+	}
 	global $wpdb;
 	$table = mgk_booking_table( 'bookings' );
 	if ( ! $table || ! $booking_id ) return null;
@@ -116,8 +121,12 @@ function mgk_get_booking_row( $booking_id ) {
 	return $row ?: null;
 }
 
-/** Fetch a booking row by its public booking_code, or null. */
+/** Fetch a booking row by its public booking_code, or null. Delegates to the
+ * module's BookingRepository (LAW 3); local $wpdb path is the fallback. */
 function mgk_get_booking_by_code( $code ) {
+	if ( class_exists( '\\Margick\\Commerce\\Wp\\BookingRepository' ) ) {
+		return \Margick\Commerce\Wp\BookingRepository::getByCode( sanitize_text_field( (string) $code ) );
+	}
 	global $wpdb;
 	$table = mgk_booking_table( 'bookings' );
 	if ( ! $table || ! $code ) return null;
